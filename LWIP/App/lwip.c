@@ -63,9 +63,15 @@ void MX_LWIP_Init(void)
   tcpip_init( NULL, NULL );
 
   /* IP addresses initialization with DHCP (IPv4) */
+#if LWIP_DHCP
   ipaddr.addr = 0;
-  netmask.addr = 0;
-  gw.addr = 0;
+    netmask.addr = 0;
+    gw.addr = 0;
+#else
+  IP4_ADDR(&ipaddr, 192, 168, 0, 100);
+    IP4_ADDR(&netmask, 255, 255, 255, 0);
+    IP4_ADDR(&gw, 192, 168, 0, 1);
+#endif
 
   /* add the network interface (IPv4/IPv6) with RTOS */
   netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
@@ -87,10 +93,12 @@ void MX_LWIP_Init(void)
   attributes.priority = osPriorityBelowNormal;
   osThreadNew(ethernet_link_thread, &gnetif, &attributes);
 /* USER CODE END H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
-
+#if LWIP_DHCP
   /* Start DHCP negotiation for a network interface (IPv4) */
   dhcp_start(&gnetif);
+#else
 
+#endif
 /* USER CODE BEGIN 3 */
 
 /* USER CODE END 3 */
@@ -113,11 +121,17 @@ static void ethernet_link_status_updated(struct netif *netif)
   if (netif_is_up(netif))
   {
 /* USER CODE BEGIN 5 */
+	  BSP_LED_On(LED1);
+	  BSP_LED_On(LED2);
+	  BSP_LED_On(LED3);
 /* USER CODE END 5 */
   }
   else /* netif is down */
   {
 /* USER CODE BEGIN 6 */
+	  BSP_LED_Off(LED1);
+	  BSP_LED_Off(LED2);
+	  BSP_LED_Off(LED3);
 /* USER CODE END 6 */
   }
 }

@@ -166,6 +166,19 @@ SECTIONS
     . = ALIGN(8);
   } >RAM_D1
 
+  /* Ethernet DMA Descriptors and lwIP buffers in D2 SRAM (non-cacheable) */
+  .lwip_sec (NOLOAD) :
+  {
+    . = ABSOLUTE(0x30000000);
+    *(.RxDecripSection)   /* Ethernet Rx DMA Descriptors */
+    
+    . = ABSOLUTE(0x30000080);
+    *(.TxDecripSection)   /* Ethernet Tx DMA Descriptors */
+    
+    . = ABSOLUTE(0x30000100);
+    *(.Rx_PoolSection)    /* lwIP zero-copy Rx buffer pool */
+  } >RAM_D2
+
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {

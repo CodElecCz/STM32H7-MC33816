@@ -50,7 +50,7 @@
 /* LwIP Stack Parameters (modified compared to initialization value in opt.h) -*/
 /* Parameters set in STM32CubeMX LwIP Configuration GUI -*/
 /*----- Value in opt.h for LWIP_DHCP: 0 -----*/
-#define LWIP_DHCP 1
+#define LWIP_DHCP 0
 /*----- Default value in ETH configuration GUI in CubeMx: 1524 -----*/
 #define ETH_RX_BUFFER_SIZE 1536
 /*----- Value in opt.h for LWIP_DNS: 0 -----*/
@@ -58,7 +58,7 @@
 /*----- Value in opt.h for MEM_ALIGNMENT: 1 -----*/
 #define MEM_ALIGNMENT 4
 /*----- Default Value for H7 devices: 0x30004000 -----*/
-#define LWIP_RAM_HEAP_POINTER 0x30004000
+#define LWIP_RAM_HEAP_POINTER 0x30005000
 /*----- Value supported for H7 devices: 1 -----*/
 #define LWIP_SUPPORT_CUSTOM_PBUF 1
 /*----- Value in opt.h for LWIP_ETHERNET: LWIP_ARP || PPPOE_SUPPORT -*/
@@ -76,7 +76,7 @@
 /*----- Value in opt.h for LWIP_NETIF_LINK_CALLBACK: 0 -----*/
 #define LWIP_NETIF_LINK_CALLBACK 1
 /*----- Value in opt.h for TCPIP_THREAD_STACKSIZE: 0 -----*/
-#define TCPIP_THREAD_STACKSIZE 1024
+#define TCPIP_THREAD_STACKSIZE 2048
 /*----- Value in opt.h for TCPIP_THREAD_PRIO: 1 -----*/
 #define TCPIP_THREAD_PRIO 24
 /*----- Value in opt.h for TCPIP_MBOX_SIZE: 0 -----*/
@@ -120,8 +120,27 @@
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
-/* HTTP Server filesystem data file location */
-#define HTTPD_FSDATA_FILE "../../web/fsdata.c"
+#define ETH_PAD_SIZE 2
+#define MEM_SIZE                (14*1024)
+
+ /* HTTP Server filesystem data file location */
+ #define HTTPD_FSDATA_FILE "../../web/fsdata.c"
+
+/* Fix for STM32H7 unaligned memory access hard fault issue */
+/* Use byte-by-byte copy to handle potentially unaligned IP addresses in ARP packets */
+#define IPADDR_WORDALIGNED_COPY_FROM_IP4_ADDR_T(dest, src) do { \
+  ((u8_t*)(dest))[0] = ((const u8_t*)(src))[0]; \
+  ((u8_t*)(dest))[1] = ((const u8_t*)(src))[1]; \
+  ((u8_t*)(dest))[2] = ((const u8_t*)(src))[2]; \
+  ((u8_t*)(dest))[3] = ((const u8_t*)(src))[3]; \
+} while(0)
+
+#define IPADDR_WORDALIGNED_COPY_TO_IP4_ADDR_T(dest, src) do { \
+  ((u8_t*)(dest))[0] = ((const u8_t*)(src))[0]; \
+  ((u8_t*)(dest))[1] = ((const u8_t*)(src))[1]; \
+  ((u8_t*)(dest))[2] = ((const u8_t*)(src))[2]; \
+  ((u8_t*)(dest))[3] = ((const u8_t*)(src))[3]; \
+} while(0)
 
 /* USER CODE END 1 */
 
