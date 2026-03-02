@@ -214,6 +214,8 @@ int main(void)
     Error_Handler();
   }
 
+  MX_USB_DEVICE_Init();
+
   /* Start scheduler */
   osKernelStart();
 
@@ -651,7 +653,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 0;
+  htim5.Init.Prescaler = ((HAL_RCC_GetPCLK1Freq() * 2) / 100000) - 1; //0;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -672,7 +674,7 @@ static void MX_TIM5_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM5_Init 2 */
-
+  HAL_TIM_Base_Start(&htim5);
   /* USER CODE END TIM5_Init 2 */
 
 }
@@ -856,7 +858,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+  //MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)

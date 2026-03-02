@@ -44,7 +44,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+extern TIM_HandleTypeDef htim5;
 /* USER CODE END Variables */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,12 +61,12 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
 __weak void configureTimerForRunTimeStats(void)
 {
-
+	__HAL_TIM_SET_COUNTER(&htim5, 0);
 }
 
 __weak unsigned long getRunTimeCounterValue(void)
 {
-return 0;
+	return __HAL_TIM_GET_COUNTER(&htim5);
 }
 /* USER CODE END 1 */
 
