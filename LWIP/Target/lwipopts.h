@@ -120,6 +120,9 @@
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
+/* HTTP Server filesystem data file location */
+#define HTTPD_FSDATA_FILE "../../web/fsdata.c"
+
 /* USER CODE END 1 */
 
 #ifdef __cplusplus

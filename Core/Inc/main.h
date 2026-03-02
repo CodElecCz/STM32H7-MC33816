@@ -64,7 +64,57 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
+/*
+ * DEBUG
+ *
+ */
+#ifdef DEBUG
+#define MAIN_DEBUG 			1
+#define LWIP_PERF			0
+#else
+#define MAIN_DEBUG 			0
+#define MAIN_RELEASE_TRACE	1
+#define LWIP_PERF			0	/* RELEASE iperf to 1 */
+#endif
 
+#if MAIN_DEBUG || MAIN_RELEASE_TRACE
+
+#define MAIN_DEBUG_TRACE(module, message)  \
+	if(MAIN_DEBUG_##module <= MAIN_DEBUG_LEVEL_TRACE) { printf message; }
+
+#define MAIN_DEBUG_ERR(module, message)  \
+	if(MAIN_DEBUG_##module <= MAIN_DEBUG_LEVEL_ERR) { printf message; }
+
+//redirect to:
+#define MAIN_DEBUG_TO_UART6			0
+#define MAIN_DEBUG_TO_USB			1
+//debug level
+#define MAIN_DEBUG_LEVEL_ERR		2
+#define MAIN_DEBUG_LEVEL_TRACE		1
+
+
+#define MAIN_DEBUG_SHELL			MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_HTTPD_SSI		MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_HTTPD_AUTH		MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_HTTPD_POST		MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_HTTPD_WS			MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_REST				MAIN_DEBUG_LEVEL_TRACE
+#define MAIN_DEBUG_REST_AUTH		MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_REST_POST		MAIN_DEBUG_LEVEL_TRACE
+#define MAIN_DEBUG_SNTP				MAIN_DEBUG_LEVEL_TRACE
+#define MAIN_DEBUG_ETHIF			MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_SPI				MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_IAP				MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_SSDP				MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_SOCKET			MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_MORPHO			MAIN_DEBUG_LEVEL_ERR
+
+#else
+
+#define MAIN_DEBUG_TRACE(module, message)
+#define MAIN_DEBUG_ERR(module, message)
+
+#endif
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
