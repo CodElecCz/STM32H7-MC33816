@@ -120,27 +120,11 @@
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
-#define ETH_PAD_SIZE 2
+#define ETH_PAD_SIZE 			2
 #define MEM_SIZE                (14*1024)
 
  /* HTTP Server filesystem data file location */
  #define HTTPD_FSDATA_FILE "../../web/fsdata.c"
-
-/* Fix for STM32H7 unaligned memory access hard fault issue */
-/* Use byte-by-byte copy to handle potentially unaligned IP addresses in ARP packets */
-#define IPADDR_WORDALIGNED_COPY_FROM_IP4_ADDR_T(dest, src) do { \
-  ((u8_t*)(dest))[0] = ((const u8_t*)(src))[0]; \
-  ((u8_t*)(dest))[1] = ((const u8_t*)(src))[1]; \
-  ((u8_t*)(dest))[2] = ((const u8_t*)(src))[2]; \
-  ((u8_t*)(dest))[3] = ((const u8_t*)(src))[3]; \
-} while(0)
-
-#define IPADDR_WORDALIGNED_COPY_TO_IP4_ADDR_T(dest, src) do { \
-  ((u8_t*)(dest))[0] = ((const u8_t*)(src))[0]; \
-  ((u8_t*)(dest))[1] = ((const u8_t*)(src))[1]; \
-  ((u8_t*)(dest))[2] = ((const u8_t*)(src))[2]; \
-  ((u8_t*)(dest))[3] = ((const u8_t*)(src))[3]; \
-} while(0)
 
 /* USER CODE END 1 */
 

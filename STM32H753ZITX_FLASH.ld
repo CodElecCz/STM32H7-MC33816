@@ -90,36 +90,46 @@ SECTIONS
 
   .ARM.extab (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
+    . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
+    . = ALIGN(4);
   } >FLASH
   .ARM (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
+    . = ALIGN(4);
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
+    . = ALIGN(4);
   } >FLASH
 
   .preinit_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
+    . = ALIGN(4);
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
+    . = ALIGN(4);
   } >FLASH
 
   .init_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
+    . = ALIGN(4);
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
+    . = ALIGN(4);
   } >FLASH
 
   .fini_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
+    . = ALIGN(4);
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
+    . = ALIGN(4);
   } >FLASH
 
   /* used by the startup to initialize data */
@@ -166,17 +176,19 @@ SECTIONS
     . = ALIGN(8);
   } >RAM_D1
 
-  /* Ethernet DMA Descriptors and lwIP buffers in D2 SRAM (non-cacheable) */
   .lwip_sec (NOLOAD) :
   {
+    . = ALIGN(4);
     . = ABSOLUTE(0x30000000);
-    *(.RxDecripSection)   /* Ethernet Rx DMA Descriptors */
+    *(.RxDescripSection) 
     
+    . = ALIGN(4);
     . = ABSOLUTE(0x30000080);
-    *(.TxDecripSection)   /* Ethernet Tx DMA Descriptors */
+    *(.TxDescripSection)
     
+    . = ALIGN(4);
     . = ABSOLUTE(0x30000100);
-    *(.Rx_PoolSection)    /* lwIP zero-copy Rx buffer pool */
+    *(.Rx_PoolSection) 
   } >RAM_D2
 
   /* Remove information from the standard libraries */
