@@ -5,6 +5,7 @@
  extern "C" {
 #endif
 
+void MC33186_Test();
 
 #ifdef __cplusplus
 }
