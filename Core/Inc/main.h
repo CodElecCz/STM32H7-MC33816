@@ -62,6 +62,42 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define MC_FLAG2_Pin GPIO_PIN_4
+#define MC_FLAG2_GPIO_Port GPIOF
+#define MC_FLAG1_Pin GPIO_PIN_5
+#define MC_FLAG1_GPIO_Port GPIOF
+#define MC_CLK_Pin GPIO_PIN_6
+#define MC_CLK_GPIO_Port GPIOF
+#define MC_OA2_Pin GPIO_PIN_0
+#define MC_OA2_GPIO_Port GPIOC
+#define MC_OA1_Pin GPIO_PIN_3
+#define MC_OA1_GPIO_Port GPIOA
+#define MC_RST_Pin GPIO_PIN_4
+#define MC_RST_GPIO_Port GPIOA
+#define MC_IRQ_Pin GPIO_PIN_7
+#define MC_IRQ_GPIO_Port GPIOE
+#define MC_DBG_Pin GPIO_PIN_8
+#define MC_DBG_GPIO_Port GPIOE
+#define MC_START5_Pin GPIO_PIN_12
+#define MC_START5_GPIO_Port GPIOB
+#define MC_START2_Pin GPIO_PIN_15
+#define MC_START2_GPIO_Port GPIOB
+#define SPI_CS_Pin GPIO_PIN_14
+#define SPI_CS_GPIO_Port GPIOD
+#define MC_START6_Pin GPIO_PIN_6
+#define MC_START6_GPIO_Port GPIOC
+#define MC_START3_Pin GPIO_PIN_7
+#define MC_START3_GPIO_Port GPIOC
+#define MC_FLAG3_Pin GPIO_PIN_12
+#define MC_FLAG3_GPIO_Port GPIOG
+#define MC_FLAG0_Pin GPIO_PIN_14
+#define MC_FLAG0_GPIO_Port GPIOG
+#define MC_DRV_Pin GPIO_PIN_4
+#define MC_DRV_GPIO_Port GPIOB
+#define MC_START4_Pin GPIO_PIN_8
+#define MC_START4_GPIO_Port GPIOB
+#define MC_START1_Pin GPIO_PIN_9
+#define MC_START1_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 /*
