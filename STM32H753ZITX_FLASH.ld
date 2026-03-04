@@ -94,6 +94,7 @@ SECTIONS
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(4);
   } >FLASH
+  
   .ARM (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     . = ALIGN(4);
@@ -176,20 +177,25 @@ SECTIONS
     . = ALIGN(8);
   } >RAM_D1
 
+  /* Ethernet DMA descriptors and buffers in RAM_D2 (D2 SRAM) for best performance */
   .lwip_sec (NOLOAD) :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     . = ABSOLUTE(0x30000000);
-    *(.RxDescripSection) 
+    *(.RxDescripSection)
+    . = ALIGN(32); 
     
-    . = ALIGN(4);
+    . = ALIGN(32);
     . = ABSOLUTE(0x30000080);
     *(.TxDescripSection)
+    . = ALIGN(32);
     
-    . = ALIGN(4);
+    . = ALIGN(32);
     . = ABSOLUTE(0x30000100);
-    *(.Rx_PoolSection) 
+    *(.Lwip_MempSection)
+    . = ALIGN(32);
   } >RAM_D2
+  
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
