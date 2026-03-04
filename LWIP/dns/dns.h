@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
  * Redistribution and use in source and binary forms, with or without modification, 
  * are permitted provided that the following conditions are met:
  *
@@ -26,20 +23,23 @@
  *
  * This file is part of the lwIP TCP/IP stack.
  * 
- * Author: Adam Dunkels <adam@sics.se>
+ * Author: Dirk Ziegelmeier <dziegel@gmx.de>
  *
  */
-#ifndef LWIP_SHELL_H
-#define LWIP_SHELL_H
+
+#ifndef DNS_APP_H
+#define DNS_APP_H
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void ShellTask_Init(void);
+bool dns_ex_init(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LWIP_SHELL_H */
+#endif /* DNS_APP_H */

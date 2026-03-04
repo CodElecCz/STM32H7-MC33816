@@ -90,6 +90,8 @@ void Error_Handler(void);
 #define MAIN_DEBUG_LEVEL_TRACE		1
 
 #define MAIN_DEBUG_SHELL			MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_SNTP				MAIN_DEBUG_LEVEL_ERR
+#define MAIN_DEBUG_DNS				MAIN_DEBUG_LEVEL_ERR
 
 #else
 

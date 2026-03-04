@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "lwip.h"
 #include "lwiperf_test.h"
+#include "shell.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -862,8 +863,14 @@ void StartDefaultTask(void *argument)
 
   MX_LWIP_Init();
 
+#if MAIN_DEBUG
+  shell_init();
+#endif
+
+#if LWIP_PERF
   //perf
   lwiperf_init();
+#endif
 
   /* Infinite loop */
   for(;;)

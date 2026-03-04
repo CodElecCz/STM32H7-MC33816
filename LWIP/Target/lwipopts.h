@@ -53,7 +53,7 @@
 #define SOCKETS_DEBUG              LWIP_DBG_OFF
 #define DNS_DEBUG                  LWIP_DBG_OFF
 #define AUTOIP_DEBUG               LWIP_DBG_OFF
-#define DHCP_DEBUG                 LWIP_DBG_ON
+#define DHCP_DEBUG                 LWIP_DBG_OFF
 #define IP_DEBUG                   LWIP_DBG_OFF
 #define IP_REASS_DEBUG             LWIP_DBG_OFF
 #define ICMP_DEBUG                 LWIP_DBG_OFF
@@ -270,7 +270,7 @@
 #define HTTPD_USE_MEM_POOL 			1
 /*----- Value in opt.h for LWIP_STATS: 1 -----*/
 #if MAIN_DEBUG
-//#define LWIP_STATS 				1
+#define LWIP_STATS 					1
 #else
 #define LWIP_STATS 					0
 #endif

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -11,27 +11,26 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
 
 #include "shell.h"
-#include "main.h"
 
 #include "lwip/opt.h"
 
@@ -51,8 +50,6 @@
 #include "lwip/if_api.h"
 #endif
 
-#define WIN32
-
 #ifdef WIN32
 #define NEWLINE "\r\n"
 #else /* WIN32 */
@@ -66,9 +63,7 @@
 #define SHELL_ECHO 0
 #endif
 
-#define TCP_PORT_SHELL		 2300				 // lwip shell
-
-#define BUFSIZE             512
+#define BUFSIZE             1024
 static unsigned char buffer[BUFSIZE];
 
 struct command {
@@ -102,12 +97,12 @@ udpl [local UDP port] [IP address] [remote port]: opens a UDP-Lite \"connection\
 static char help_msg2[] = "udpn [local UDP port] [IP address] [remote port]: opens a UDP \"connection\" without checksums."NEWLINE"\
 udpb [local port] [remote port]: opens a UDP broadcast \"connection\"."NEWLINE"\
 usnd [connection #] [message]: sends a message on a UDP connection."NEWLINE"\
-recv [connection #]: recieves data on a TCP or UDP connection."NEWLINE"\
+recv [connection #]: receives data on a TCP or UDP connection."NEWLINE"\
 clos [connection #]: closes a TCP or UDP connection."NEWLINE"\
 stat: prints out lwIP statistics."NEWLINE"\
 idxtoname [index]: outputs interface name from index."NEWLINE"\
 nametoidx [name]: outputs interface index from name."NEWLINE;
-static char help_msg3[] = 
+static char help_msg3[] =
 "gethostnm [name]: outputs IP address of host."NEWLINE"\
 quit: quits"NEWLINE"";
 
@@ -165,7 +160,7 @@ static struct stats_proto* shell_stat_proto_stats[] = {
   &lwip_stats.tcp,
 #endif
 };
-const size_t num_protostats = sizeof(shell_stat_proto_stats)/sizeof(struct stats_proto*);
+static const size_t num_protostats = sizeof(shell_stat_proto_stats)/sizeof(struct stats_proto*);
 
 static const char *stat_msgs_proto[] = {
   " * transmitted ",
@@ -226,8 +221,8 @@ com_open(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_TCP);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
   err = netconn_connect(conns[i], &ipaddr, port);
@@ -248,7 +243,7 @@ com_open(struct command *com)
   sendstr("Opened connection, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -280,11 +275,11 @@ com_lstn(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_TCP);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
-  
+
   err = netconn_bind(conns[i], IP_ADDR_ANY, port);
   if (err != ERR_OK) {
     netconn_delete(conns[i]);
@@ -298,7 +293,7 @@ com_lstn(struct command *com)
     sendstr(NEWLINE, com->conn);
     return ESUCCESS;
   }
-  
+
   err = netconn_listen(conns[i]);
   if (err != ERR_OK) {
     netconn_delete(conns[i]);
@@ -316,7 +311,7 @@ com_lstn(struct command *com)
   sendstr("Opened connection, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -326,7 +321,7 @@ com_clos(struct command *com)
 {
   int i;
   err_t err;
-  
+
   i = strtol(com->args[0], NULL, 10);
 
   if (i > NCONNS) {
@@ -382,7 +377,7 @@ com_acpt(struct command *com)
   }
 
   err = netconn_accept(conns[i], &conns[j]);
-  
+
   if (err != ERR_OK) {
     sendstr("Could not accept connection: ", com->conn);
 #ifdef LWIP_DEBUG
@@ -499,7 +494,7 @@ com_send(struct command *com)
   int i;
   err_t err;
   size_t len;
-  
+
   i = strtol(com->args[0], NULL, 10);
 
   if (i > NCONNS) {
@@ -516,7 +511,7 @@ com_send(struct command *com)
   com->args[1][len] = '\r';
   com->args[1][len + 1] = '\n';
   com->args[1][len + 2] = 0;
-  
+
   err = netconn_write(conns[i], com->args[1], len + 3, NETCONN_COPY);
   if (err != ERR_OK) {
     sendstr("Could not send data: ", com->conn);
@@ -528,7 +523,7 @@ com_send(struct command *com)
     sendstr(NEWLINE, com->conn);
     return ESUCCESS;
   }
-  
+
   sendstr("Data enqueued for sending."NEWLINE, com->conn);
   return ESUCCESS;
 }
@@ -540,7 +535,7 @@ com_recv(struct command *com)
   err_t err;
   struct netbuf *buf;
   u16_t len;
-  
+
   i = strtol(com->args[0], NULL, 10);
 
   if (i > NCONNS) {
@@ -555,14 +550,14 @@ com_recv(struct command *com)
 
   err = netconn_recv(conns[i], &buf);
   if (err == ERR_OK) {
-      
+
     netbuf_copy(buf, buffer, BUFSIZE);
     len = netbuf_len(buf);
     sendstr("Reading from connection:"NEWLINE, com->conn);
     netconn_write(com->conn, buffer, len, NETCONN_COPY);
     netbuf_delete(buf);
   } else {
-    sendstr("EOF."NEWLINE, com->conn); 
+    sendstr("EOF."NEWLINE, com->conn);
   }
   err = netconn_err(conns[i]);
   if (err != ERR_OK) {
@@ -621,8 +616,8 @@ com_udpc(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_UDP);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
 
@@ -657,7 +652,7 @@ com_udpc(struct command *com)
   sendstr("Connection set up, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -704,8 +699,8 @@ com_udpl(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_UDPLITE);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
 
@@ -740,7 +735,7 @@ com_udpl(struct command *com)
   sendstr("Connection set up, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -787,8 +782,8 @@ com_udpn(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_UDPNOCHKSUM);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
 
@@ -823,7 +818,7 @@ com_udpn(struct command *com)
   sendstr("Connection set up, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -873,8 +868,8 @@ com_udpb(struct command *com)
   sendstr(NEWLINE, com->conn);
 
   conns[i] = netconn_new(NETCONN_UDP);
-  if (conns[i] == NULL) {    
-    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn); 
+  if (conns[i] == NULL) {
+    sendstr("Could not create connection identifier (out of memory)."NEWLINE, com->conn);
     return ESUCCESS;
   }
 
@@ -913,7 +908,7 @@ com_udpb(struct command *com)
   sendstr("Connection set up, connection identifier is ", com->conn);
   snprintf((char *)buffer, sizeof(buffer), "%d"NEWLINE, i);
   netconn_write(com->conn, buffer, strlen((const char *)buffer), NETCONN_COPY);
-  
+
   return ESUCCESS;
 }
 /*-----------------------------------------------------------------------------------*/
@@ -926,7 +921,7 @@ com_usnd(struct command *com)
   char *mem;
   u16_t len;
   size_t tmp;
-  
+
   i = strtol(com->args[0], NULL, 10);
 
   if (i > NCONNS) {
@@ -964,7 +959,7 @@ com_usnd(struct command *com)
     sendstr(NEWLINE, com->conn);
     return ESUCCESS;
   }
-  
+
   sendstr("Data sent."NEWLINE, com->conn);
   return ESUCCESS;
 }
@@ -1037,7 +1032,7 @@ parse_command(struct command *com, u32_t len)
 {
   u16_t i;
   u16_t bufp;
-  
+
   if (strncmp((const char *)buffer, "open", 4) == 0) {
     com->exec = com_open;
     com->nargs = 2;
@@ -1050,11 +1045,11 @@ parse_command(struct command *com, u32_t len)
   } else if (strncmp((const char *)buffer, "clos", 4) == 0) {
     com->exec = com_clos;
     com->nargs = 1;
-#if LWIP_STATS    
+#if LWIP_STATS
   } else if (strncmp((const char *)buffer, "stat", 4) == 0) {
     com->exec = com_stat;
     com->nargs = 0;
-#endif    
+#endif
   } else if (strncmp((const char *)buffer, "send", 4) == 0) {
     com->exec = com_send;
     com->nargs = 2;
@@ -1093,7 +1088,7 @@ parse_command(struct command *com, u32_t len)
     com->exec = com_help;
     com->nargs = 0;
   } else if (strncmp((const char *)buffer, "quit", 4) == 0) {
-    //printf("quit"NEWLINE);
+    printf("quit"NEWLINE);
     return ECLOSED;
   } else {
     return ESYNTAX;
@@ -1116,10 +1111,10 @@ parse_command(struct command *com, u32_t len)
         return ETOOMANY;
       }
       break;
-    }    
+    }
     if (bufp > len) {
       return ETOOFEW;
-    }    
+    }
     com->args[i] = (char *)&buffer[bufp];
     for(; bufp < len && buffer[bufp] != ' ' && buffer[bufp] != '\r' &&
       buffer[bufp] != '\n'; bufp++) {
@@ -1167,181 +1162,116 @@ static void
 prompt(struct netconn *conn)
 {
   sendstr("> ", conn);
-}  
+}
 /*-----------------------------------------------------------------------------------*/
-static void shell_server(struct netconn *conn)
+static void
+shell_main(struct netconn *conn)
 {
-	struct pbuf *p;
-	u16_t len = 0, cur_len;
-	struct command com;
-	s8_t err;
-	int i;
-	err_t ret;
-
+  struct pbuf *p;
+  u16_t len = 0, cur_len;
+  struct command com;
+  s8_t err;
+  int i;
+  err_t ret;
 #if SHELL_ECHO
-	void *echomem;
+  void *echomem;
 #endif /* SHELL_ECHO */
 
-	MAIN_DEBUG_TRACE(SHELL, ("SHELL connection open\n"));
-
-	do
-	{
-		ret = netconn_recv_tcp_pbuf(conn, &p);
-		if (ret == ERR_OK)
-		{
-			pbuf_copy_partial(p, &buffer[len], (u16_t)(BUFSIZE - len), 0);
-			cur_len = p->tot_len;
-			len = (u16_t)(len + cur_len);
-			if ((len < cur_len) || (len > BUFSIZE))
-			{
-				len = BUFSIZE;
-			}
+  do {
+    ret = netconn_recv_tcp_pbuf(conn, &p);
+    if (ret == ERR_OK) {
+      pbuf_copy_partial(p, &buffer[len], (u16_t)(BUFSIZE - len), 0);
+      cur_len = p->tot_len;
+      len = (u16_t)(len + cur_len);
+      if ((len < cur_len) || (len > BUFSIZE)) {
+        len = BUFSIZE;
+      }
 #if SHELL_ECHO
-		echomem = mem_malloc(cur_len);
-		if (echomem != NULL)
-		{
-			pbuf_copy_partial(p, echomem, cur_len, 0);
-			netconn_write(conn, echomem, cur_len, NETCONN_COPY);
-			mem_free(echomem);
-		}
+      echomem = mem_malloc(cur_len);
+      if (echomem != NULL) {
+        pbuf_copy_partial(p, echomem, cur_len, 0);
+        netconn_write(conn, echomem, cur_len, NETCONN_COPY);
+        mem_free(echomem);
+      }
 #endif /* SHELL_ECHO */
-			pbuf_free(p);
-			if (((len > 0) && ((buffer[len-1] == '\r') || (buffer[len-1] == '\n'))) ||
-			(len >= BUFSIZE))
-			{
-				if (buffer[0] != 0xff && buffer[1] != 0xfe)
-				{
-					err = parse_command(&com, len);
-					if (err == ESUCCESS)
-					{
-						com.conn = conn;
-						err = com.exec(&com);
-					}
-
-					if (err == ECLOSED)
-					{
-						shell_error(err, conn);
-						goto close;
-					}
-
-					if (err != ESUCCESS)
-					{
-						shell_error(err, conn);
-					}
-				}
-				else
-				{
-					sendstr(NEWLINE NEWLINE
-							"lwIP simple interactive shell."NEWLINE
-							"(c) Copyright 2001, Swedish Institute of Computer Science."NEWLINE
-							"Written by Adam Dunkels."NEWLINE
-							"For help, try the \"help\" command."NEWLINE, conn);
-				}
-
-				if (ret == ERR_OK)
-				{
-					prompt(conn);
-				}
-				len = 0;
-			}
-		}
-	} while (ret == ERR_OK);
-
-	//MAIN_DEBUG_ERR(SHELL, ("SHELL err %s\n", lwip_strerr(ret)));
+      pbuf_free(p);
+      if (((len > 0) && ((buffer[len-1] == '\r') || (buffer[len-1] == '\n'))) ||
+          (len >= BUFSIZE)) {
+        if (buffer[0] != 0xff &&
+           buffer[1] != 0xfe) {
+          err = parse_command(&com, len);
+          if (err == ESUCCESS) {
+            com.conn = conn;
+            err = com.exec(&com);
+          }
+          if (err == ECLOSED) {
+            printf("Closed"NEWLINE);
+            shell_error(err, conn);
+            goto close;
+          }
+          if (err != ESUCCESS) {
+            shell_error(err, conn);
+          }
+        } else {
+          sendstr(NEWLINE NEWLINE
+                  "lwIP simple interactive shell."NEWLINE
+                  "(c) Copyright 2001, Swedish Institute of Computer Science."NEWLINE
+                  "Written by Adam Dunkels."NEWLINE
+                  "For help, try the \"help\" command."NEWLINE, conn);
+        }
+        if (ret == ERR_OK) {
+          prompt(conn);
+        }
+        len = 0;
+      }
+    }
+  } while (ret == ERR_OK);
+  printf("err %s"NEWLINE, lwip_strerr(ret));
 
 close:
-	MAIN_DEBUG_TRACE(SHELL, ("SHELL connection close\n"));
+  netconn_close(conn);
 
-	/* Close connection and discard connection identifier. */
-	netconn_close(conn);
-	netconn_delete(conn);
-
-	for(i = 0; i < NCONNS; i++)
-	{
-		if (conns[i] != NULL)
-		{
-			netconn_delete(conns[i]);
-		}
-		conns[i] = NULL;
-	}
+  for(i = 0; i < NCONNS; i++) {
+    if (conns[i] != NULL) {
+      netconn_delete(conns[i]);
+    }
+    conns[i] = NULL;
+  }
 }
 /*-----------------------------------------------------------------------------------*/
-static void StartShellTask(void *argument)
+static void
+shell_thread(void *arg)
 {
-	struct netconn *nc = (struct netconn *)argument;
-	struct netconn *connection;
+  struct netconn *conn, *newconn;
+  err_t err;
+  LWIP_UNUSED_ARG(arg);
 
-	MAIN_DEBUG_TRACE(SHELL, ("StartShellTask(): start\n"));
+#if LWIP_IPV6
+  conn = netconn_new(NETCONN_TCP_IPV6);
+  LWIP_ERROR("shell: invalid conn", (conn != NULL), return;);
+  err = netconn_bind(conn, IP6_ADDR_ANY, 23);
+#else /* LWIP_IPV6 */
+  conn = netconn_new(NETCONN_TCP);
+  LWIP_ERROR("shell: invalid conn", (conn != NULL), return;);
+  err = netconn_bind(conn, IP_ADDR_ANY, 23);
+#endif /* LWIP_IPV6 */
+  LWIP_ERROR("shell: netconn_bind failed", (err == ERR_OK), netconn_delete(conn); return;);
+  err = netconn_listen(conn);
+  LWIP_ERROR("shell: netconn_listen failed", (err == ERR_OK), netconn_delete(conn); return;);
 
-	for (;;)
-	{
-		err_t err = netconn_accept(nc, &connection);
-		if (err == ERR_OK)
-		{
-			// Handle the connected netconn here
-			shell_server(connection);
-		}
-		else if (err == ERR_WOULDBLOCK)
-		{
-			// No pending connections
-		}
-		else
-		{
-			// A problem with the listen socket accepting the connection
-			MAIN_DEBUG_ERR(SHELL, ("SHELL accept error: %d\n", err));
-		}
-
-		osDelay(100);
-	}
+  while (1) {
+    err = netconn_accept(conn, &newconn);
+    if (err == ERR_OK) {
+      shell_main(newconn);
+      netconn_delete(newconn);
+    }
+  }
 }
-
 /*-----------------------------------------------------------------------------------*/
-typedef StaticTask_t osStaticThreadDef_t;
-
-/* Definitions for uartTask */
-osThreadId_t shellTaskHandle;
-uint32_t shellTaskBuffer[ configMINIMAL_STACK_SIZE*4 ];
-osStaticThreadDef_t shellTaskControlBlock;
-const osThreadAttr_t shellTask_attributes = {
-  .name = "shellTaskCCM",
-  .stack_mem = &shellTaskBuffer[0],
-  .stack_size = sizeof(shellTaskBuffer),
-  .cb_mem = &shellTaskControlBlock,
-  .cb_size = sizeof(shellTaskControlBlock),
-  .priority = (osPriority_t) osPriorityLow1,
-};
-
-void ShellTask_Init(void)
+void
+shell_init(void)
 {
-	struct netconn *nc;
-
-	/* Create a new connection identifier. */
-	nc  = netconn_new(NETCONN_TCP);
-	if(nc == NULL)
-	{
-		MAIN_DEBUG_ERR(SHELL, ("SHELL can not create TCP netconn\n"));
-		return;
-	}
-
-	netconn_set_nonblocking(nc, 1);
-
-	/* Bind connection. */
-	err_t err = netconn_bind(nc, NULL, TCP_PORT_SHELL);
-	if(err != ERR_OK )
-	{
-		netconn_delete(nc);
-		MAIN_DEBUG_ERR(SHELL, ("SHELL can not bind TCP netconn\n"));
-	}
-
-	/* Tell connection to go into listening mode. */
-	err = netconn_listen(nc);
-	if(err != ERR_OK )
-	{
-		netconn_delete(nc);
-		MAIN_DEBUG_ERR(SHELL, ("SHELL can not listen TCP port\n"));
-	}
-
-	shellTaskHandle = osThreadNew(StartShellTask, nc, &shellTask_attributes);
+  sys_thread_new("shell_thread", shell_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
 }
 
 #endif /* LWIP_NETCONN && LWIP_TCP */
