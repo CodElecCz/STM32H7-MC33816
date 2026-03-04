@@ -106,7 +106,7 @@ void Error_Handler(void);
  */
 #ifdef DEBUG
 #define MAIN_DEBUG 			1
-#define LWIP_PERF			0
+#define LWIP_PERF			1
 #else
 #define MAIN_DEBUG 			0
 #define MAIN_RELEASE_TRACE	1
