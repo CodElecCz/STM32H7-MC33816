@@ -18,7 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 #include "mbedtls.h"
 #include "usb_device.h"
 
@@ -199,7 +200,7 @@ int main(void)
 
   /* Initialize leds */
   BSP_LED_Init(LED_GREEN);
-  BSP_LED_Init(LED_BLUE);
+  BSP_LED_Init(LED_YELLOW);
   BSP_LED_Init(LED_RED);
 
   /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
@@ -774,8 +775,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(MC_DBG_GPIO_Port, MC_DBG_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, MC_START5_Pin|MC_START2_Pin|MC_DRV_Pin|MC_START4_Pin
-                          |MC_START1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, MC_START5_Pin|MC_START2_Pin|MC_DRV_Pin|GPIO_PIN_7
+                          |MC_START4_Pin|MC_START1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
@@ -842,6 +843,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

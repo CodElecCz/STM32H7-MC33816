@@ -137,7 +137,7 @@
 #define LWIP_DHCP_GET_NTP_SRV			0
 #define SNTP_SERVER_DNS					1
 #define SNTP_UPDATE_DELAY           	3600000 //ms; 60s = 60000
-#define SNTP_SET_SYSTEM_TIME(sec)   	sntp_set_system_time(sec)
+//#define SNTP_SET_SYSTEM_TIME(sec)   	sntp_set_system_time(sec)
 
 //mdns
 #define LWIP_MDNS_RESPONDER             0
