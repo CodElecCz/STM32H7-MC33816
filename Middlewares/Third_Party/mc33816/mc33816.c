@@ -61,6 +61,8 @@ typedef enum _EMC_RegOp
 
 typedef enum _EMC_RegAdd
 {
+	EMC_RegAdd_Code_width_ch1	=	0x107,
+	EMC_RegAdd_Code_width_ch2	=	0x127,
 	EMC_RegAdd_Spi_config		=	0x1C8,
 	EMC_RegAdd_Spi_error		=	0x1D3,
 	EMC_RegAdd_Selection_reg 	=	0x3ff
@@ -111,22 +113,30 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 	//SPI_DATASIZE_16BIT
 	uint16_t tx_word = 0;
 	uint16_t rx_word = 0;
+
+#define MC_SPI_DELAY 20
+	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+
 	for(size_t i = 0; i < Size/2; i++)
 	{
 		//First byte is MSB
 		tx_word = (TxData[2*i] << 8) | TxData[2*i + 1];
 		rx_word = 0;
 
-		HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
 		ret = HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&tx_word, (uint8_t*)&rx_word, 1, 100);
-		HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
+		//HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
 
-		for(volatile int i=0; i<10; i++) __NOP(); // Short delay
-
+		for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
 
 		RxData[2*i] = (rx_word >> 8) & 0xFF; // MSB
 		RxData[2*i + 1] = rx_word & 0xFF;    // LSB
 	}
+
+	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
+	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
 #endif
 	if(ret == HAL_OK)
 	{
@@ -136,20 +146,31 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 			rx_data[i] = RxData[2 + i];
 		}
 
-		//check response
-		if((RxData[1] & 0x01) != 0) //word error
+		//check response - first 16-bit word contains status
+		uint16_t response = (RxData[0] << 8) | RxData[1];
+		
+		//check error bits [0:2]
+		if((response & 0x0001) != 0) //bit 0: word error
 		{
 			MAIN_DEBUG_ERR(MC33816, ("MC33816: word error\n"));
 			ret = HAL_ERROR;
 		}
-		if((RxData[1] & 0x02) != 0) //frame error
+		if((response & 0x0002) != 0) //bit 1: frame error
 		{
 			MAIN_DEBUG_ERR(MC33816, ("MC33816: frame error\n"));
 			ret = HAL_ERROR;
 		}
-		if((RxData[1] & 0x04) != 0) //cksys missing
+		if((response & 0x0004) != 0) //bit 2: cksys missing
 		{
 			MAIN_DEBUG_ERR(MC33816, ("MC33816: cksys missing\n"));
+			ret = HAL_ERROR;
+		}
+		
+		//check bits [3:15] should be alternating pattern 1010101010101 = 0x1555
+		uint16_t check_pattern = (response >> 3) & 0x1FFF;
+		if(check_pattern != 0x1555)
+		{
+			MAIN_DEBUG_ERR(MC33816, ("MC33816: invalid check pattern 0x%04X (expected 0x1555)\n", check_pattern));
 			ret = HAL_ERROR;
 		}
 	}
@@ -169,16 +190,8 @@ void MC33186_Test()
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
 	HAL_Delay(10);
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_SET);
-	HAL_Delay(10);
-#if 0
-	uint16_t wake_cmd = 0x1B02; // Enable Internal Osc + VCCP
+	HAL_Delay(4);
 
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET); // CS LOW
-	HAL_SPI_Transmit(&hspi1, (uint8_t*)&wake_cmd, 1, 100);   // Send 1 word (16 bits)
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);   // CS HIGH (LATCH)
-
-	HAL_Delay(5); // Wait for internal clock to stabilize
-#endif
 	//EMC_RegAdd_Selection_reg
 	TxData[0] = 0x00;
 	TxData[1] = 0x04;
@@ -189,6 +202,18 @@ void MC33186_Test()
 	TxData[1] = 0x1F;
 	MC33186_Register(EMC_RegOp_Write, EMC_RegAdd_Spi_config, TxData, RxData, 2);
 
+	//EMC_RegAdd_Code_width_ch1
+	TxData[0] = 0x00;
+	TxData[1] = 0xA8;
+	MC33186_Register(EMC_RegOp_Write, EMC_RegAdd_Code_width_ch1, TxData, RxData, 2);
+
+	//EMC_RegAdd_Selection_reg
+	TxData[0] = 0x00;
+	TxData[1] = 0x01;
+	MC33186_Register(EMC_RegOp_Write, EMC_RegAdd_Selection_reg, TxData, RxData, 2);
+
+
+#if 0
 	//EMC_RegAdd_Spi_error
 	TxData[0] = 0x00;
 	TxData[1] = 0x00;
@@ -198,4 +223,5 @@ void MC33186_Test()
 	TxData[0] = 0x00;
 	TxData[1] = 0x00;
 	MC33186_Register(EMC_RegOp_Read, EMC_RegAdd_Spi_error, TxData, RxData, 2);
+#endif
 }
