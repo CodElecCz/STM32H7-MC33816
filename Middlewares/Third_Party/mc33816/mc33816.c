@@ -64,7 +64,9 @@ typedef enum _EMC_RegAdd
 	EMC_RegAdd_Code_width_ch1	=	0x107,
 	EMC_RegAdd_Code_width_ch2	=	0x127,
 	EMC_RegAdd_Spi_config		=	0x1C8,
+	EMC_RegAdd_Driver_status	=	0x1D2,
 	EMC_RegAdd_Spi_error		=	0x1D3,
+	EMC_RegAdd_Interrupt_status	=	0x1D4,
 	EMC_RegAdd_Selection_reg 	=	0x3ff
 } EMC_RegAdd;
 
@@ -93,6 +95,8 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 	uint8_t RxData[MC_DATA_SIZE_MAX + 2];
 	uint16_t Size = 0;
 
+	memset(RxData, 0, sizeof(RxData));
+
 	uint16_t control16 = (op << 15) | ((add & 0x3FF) << 5) | (data_size/2 & 0x1F);
 	TxData[0] = (control16 >> 8) & 0xFF;
 	TxData[1] = control16 & 0xFF;
@@ -105,7 +109,8 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 
 	MC33816_HexDump(TxData, Size);
 
-#if 0
+#if 1
+	//SPI_DATASIZE_8BIT
 	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
 	ret = HAL_SPI_TransmitReceive(&hspi1, TxData, RxData, Size, 100);
 	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
@@ -114,10 +119,10 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 	uint16_t tx_word = 0;
 	uint16_t rx_word = 0;
 
-#define MC_SPI_DELAY 20
-	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+#define MC_SPI_DELAY 10
+	//for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
 	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
-	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+	//for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
 
 	for(size_t i = 0; i < Size/2; i++)
 	{
@@ -125,18 +130,20 @@ HAL_StatusTypeDef MC33186_Register(EMC_RegOp op, EMC_RegAdd add, const uint8_t t
 		tx_word = (TxData[2*i] << 8) | TxData[2*i + 1];
 		rx_word = 0;
 
-		//HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
 		ret = HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&tx_word, (uint8_t*)&rx_word, 1, 100);
-		//HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-
-		for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+		if(ret != HAL_OK)
+		{
+			HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
+			MAIN_DEBUG_ERR(MC33816, ("MC33816: HAL_SPI_TransmitReceive() error: %d\n", ret));
+			return ret;
+		}
 
 		RxData[2*i] = (rx_word >> 8) & 0xFF; // MSB
 		RxData[2*i + 1] = rx_word & 0xFF;    // LSB
 	}
 
 	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-	for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
+	//for(volatile int i=0; i<MC_SPI_DELAY; i++) __NOP(); // Short delay
 #endif
 	if(ret == HAL_OK)
 	{
@@ -187,15 +194,21 @@ void MC33186_Test()
 	uint8_t TxData[MC_DATA_SIZE_MAX];
 	uint8_t RxData[MC_DATA_SIZE_MAX];
 
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MC_START1_GPIO_Port, MC_START1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
 	HAL_Delay(10);
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_SET);
 	HAL_Delay(4);
 
 	//EMC_RegAdd_Selection_reg
 	TxData[0] = 0x00;
 	TxData[1] = 0x04;
 	MC33186_Register(EMC_RegOp_Write, EMC_RegAdd_Selection_reg, TxData, RxData, 2);
+
+	HAL_Delay(10);
 
 	//EMC_RegAdd_Spi_config
 	TxData[0] = 0x00;
@@ -212,6 +225,24 @@ void MC33186_Test()
 	TxData[1] = 0x01;
 	MC33186_Register(EMC_RegOp_Write, EMC_RegAdd_Selection_reg, TxData, RxData, 2);
 
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MC_START1_GPIO_Port, MC_START1_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_SET);
+	HAL_Delay(4);
+
+	//EMC_RegAdd_Driver_status
+	TxData[0] = 0x00;
+	TxData[1] = 0x00;
+	MC33186_Register(EMC_RegOp_Read, EMC_RegAdd_Driver_status, TxData, RxData, 2);
+
+	//EMC_RegAdd_Interrupt_status
+	TxData[0] = 0x00;
+	TxData[1] = 0x00;
+	MC33186_Register(EMC_RegOp_Read, EMC_RegAdd_Interrupt_status, TxData, RxData, 2);
 
 #if 0
 	//EMC_RegAdd_Spi_error
