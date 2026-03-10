@@ -28,8 +28,8 @@
 #include "lwip.h"
 #include "lwiperf_test.h"
 #include "shell.h"
-#include "mc33816.h"
-#include "mc33816_sniffer.h"
+#include "test/mc33816_test.h"
+#include "test/mc33816_sniffer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -888,26 +888,9 @@ void StartDefaultTask(void *argument)
   lwiperf_init();
 #endif
 
-  MC33186_Test();
-
-  //MC33816_Sniffer_Init();
-  //MC33816_Sniffer_Start();
-
   /* Infinite loop */
   for(;;)
   {
-	  static uint32_t lastPrintTime = 0;
-	  //MC33816_Sniffer_Process();
-
-	  // Print every 5 seconds
-	  if(HAL_GetTick() - lastPrintTime >= 5000)
-	  {
-		  lastPrintTime = HAL_GetTick();
-
-		  //MC33816_Sniffer_PrintBuffer();
-		  //MC33816_Sniffer_ClearBuffer();
-	  }
-
     osDelay(1);
   }
   /* USER CODE END 5 */
