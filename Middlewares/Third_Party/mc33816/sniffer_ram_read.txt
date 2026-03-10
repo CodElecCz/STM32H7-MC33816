@@ -1,0 +1,165 @@
+Tx
+
+MC33816_Sniffer: Initialized
+MC33816_Sniffer: Started capturing on SPI1
+MC33816_Sniffer: Packet #1 captured (64 bytes buffered)
+MC33816_Sniffer: Packet #2 captured (128 bytes buffered)
+MC33816_Sniffer: Buffer Status
+  Packets captured: 2
+  Buffer count: 128 bytes
+  Overflow count: 0
+  Is capturing: 1
+
+Captured Data:
+0000: 7F E1 00 04 39 01 00 1F 7F E1 00 04 80 00 00 00 
+0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+Decoded Transactions:
+  WRITE Addr:0x3FF Count:1
+    Data: 00 04
+  WRITE Addr:0x1C8 Count:1
+    Data: 00 1F
+  WRITE Addr:0x3FF Count:1
+    Data: 00 04
+  READ  Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+MC33816_Sniffer: Packet #1 captured (64 bytes buffered)
+MC33816_Sniffer: Packet #2 captured (128 bytes buffered)
+MC33816_Sniffer: Buffer Status
+  Packets captured: 2
+  Buffer count: 128 bytes
+  Overflow count: 0
+  Is capturing: 1
+
+Captured Data:
+0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0060: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+Decoded Transactions:
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  WRITE Addr:0x000 Count:0
+  
+--------------------------------------------------------------------------------
+Rx
+
+MC33816_Sniffer: Initialized
+MC33816_Sniffer: Started capturing on SPI1
+MC33816_Sniffer: Packet #1 captured (64 bytes buffered)
+MC33816_Sniffer: Packet #2 captured (128 bytes buffered)
+MC33816_Sniffer: Packet #3 captured (192 bytes buffered)
+MC33816_Sniffer: Packet #4 captured (256 bytes buffered)
+MC33816_Sniffer: Buffer Status
+  Packets captured: 4
+  Buffer count: 256 bytes
+  Overflow count: 0
+  Is capturing: 1
+
+Captured Data:
+0000: AA A8 AA A8 AA A8 AA A8 AA A8 AA A8 AA A8 AF FF 
+0010: C0 D5 45 0C F0 7B CD 3C 51 AD 99 C0 A6 4B 71 7E 
+0020: 18 86 D9 D4 76 8A CD CD 87 3D 90 00 D7 FF 12 52 
+0030: 81 24 0F 61 94 94 E2 97 D6 0A AD F7 5B 48 B4 33 
+0040: 9C E6 19 51 E6 06 31 95 8E 76 3A 8C 20 00 FF DF 
+0050: E5 F0 C6 C7 2D 4D 12 A0 A8 0D 56 F2 54 01 88 67 
+0060: FF 4C 03 1F FD A1 95 54 69 05 16 66 BC FC 24 80 
+0070: 1E 3D D1 53 9E 5C 84 98 BB 31 E4 C4 8B 42 B4 E9 
+0080: 93 53 15 4E 7C F8 42 14 1D 4D B7 CF 40 10 FF FF 
+0090: 90 68 24 80 9A 28 A8 5D 14 60 BB 90 E0 6C C3 8B 
+00A0: A8 05 5D D8 FA 26 9E 38 42 C9 1E 07 E1 BB 0D 08 
+00B0: 82 ED E5 8F B8 E4 CB 0E A3 42 0A 0F FB FE 8A 46 
+00C0: 1A 25 95 C2 EE 0B 85 17 DA 7A E7 EC 00 02 BF FF 
+00D0: 28 48 A3 BB CC 1E 96 A5 B8 80 06 CE 49 20 86 82 
+00E0: 3D 7B 5B 88 2E F5 1B F2 33 04 ED 61 DF EF A2 09 
+00F0: 5C 9A 0B 7F A5 01 71 F0 EE 87 32 6E 89 E3 56 87 
+
+

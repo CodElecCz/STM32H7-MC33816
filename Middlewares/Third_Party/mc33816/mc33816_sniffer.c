@@ -48,6 +48,7 @@ extern SPI_HandleTypeDef hspi1;
 
 #define SNIFFER_BUFFER_SIZE		512		// Number of bytes to capture
 #define SNIFFER_PACKET_SIZE		64		// Max size per packet
+#define SNIFFER_MAX_TRANSACTIONS	128	// Max number of transactions to track
 
 typedef struct {
 	uint8_t data[SNIFFER_BUFFER_SIZE];
@@ -59,13 +60,29 @@ typedef struct {
 	uint8_t is_capturing;
 } MC33816_SnifferBuffer_t;
 
+typedef struct {
+	uint32_t timestamp;		// HAL_GetTick() timestamp
+	uint16_t ctrl_word;		// Control word (R/W, address, count)
+	uint16_t data_offset;	// Offset in data buffer where payload starts
+	uint8_t data_length;	// Number of data bytes
+	uint8_t is_read;		// 1 = read, 0 = write
+} MC33816_Transaction_t;
+
+typedef struct {
+	MC33816_Transaction_t transactions[SNIFFER_MAX_TRANSACTIONS];
+	uint16_t count;
+	uint16_t head;
+} MC33816_TransactionLog_t;
+
 /*******************************************************************************
  * PRIVATE VARIABLES
  ******************************************************************************/
 
 static MC33816_SnifferBuffer_t sniffer_buffer = {0};
+static MC33816_TransactionLog_t transaction_log = {0};
 static uint8_t sniffer_rx_buffer[SNIFFER_PACKET_SIZE];
 static volatile uint8_t sniffer_transfer_complete = 0;
+static uint32_t capture_timestamp = 0;
 
 /*******************************************************************************
  * PUBLIC FUNCTIONS
@@ -80,6 +97,7 @@ HAL_StatusTypeDef MC33816_Sniffer_Init(void)
 {
 	// Clear buffer
 	memset(&sniffer_buffer, 0, sizeof(sniffer_buffer));
+	memset(&transaction_log, 0, sizeof(transaction_log));
 	memset(sniffer_rx_buffer, 0, sizeof(sniffer_rx_buffer));
 	
 	MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Initialized\n"));
@@ -132,6 +150,7 @@ void MC33816_Sniffer_Process(void)
 		return;
 	
 	sniffer_transfer_complete = 0;
+	uint16_t data_start_pos = sniffer_buffer.head;
 	
 	// Store received data in circular buffer
 	for(uint16_t i = 0; i < SNIFFER_PACKET_SIZE; i++)
@@ -151,8 +170,50 @@ void MC33816_Sniffer_Process(void)
 	
 	sniffer_buffer.packet_count++;
 	
-	MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Packet #%lu captured (%u bytes buffered)\n", 
-		sniffer_buffer.packet_count, sniffer_buffer.count));
+	// Parse transactions from the captured packet and log with timestamps
+	if(SNIFFER_PACKET_SIZE >= 2)
+	{
+		uint16_t pos = 0;
+		while(pos + 1 < SNIFFER_PACKET_SIZE)
+		{
+			// Read control word
+			uint16_t ctrl_word = (sniffer_rx_buffer[pos] << 8) | sniffer_rx_buffer[pos + 1];
+			
+			// Skip if it looks like padding (all zeros or all FFs)
+			if(ctrl_word == 0x0000 || ctrl_word == 0xFFFF)
+			{
+				pos++;
+				continue;
+			}
+			
+			uint8_t rw = (ctrl_word >> 15) & 0x01;
+			uint16_t offset = (ctrl_word >> 5) & 0x3FF;
+			uint8_t number = ctrl_word & 0x1F;
+			
+			// Add transaction to log if there's space
+			if(transaction_log.count < SNIFFER_MAX_TRANSACTIONS)
+			{
+				MC33816_Transaction_t *txn = &transaction_log.transactions[transaction_log.head];
+				txn->timestamp = capture_timestamp;
+				txn->ctrl_word = ctrl_word;
+				txn->is_read = rw;
+				txn->data_offset = (data_start_pos + pos + 2) % SNIFFER_BUFFER_SIZE;
+				txn->data_length = number * 2;
+				
+				transaction_log.head = (transaction_log.head + 1) % SNIFFER_MAX_TRANSACTIONS;
+				transaction_log.count++;
+			}
+			
+			// Move to next transaction
+			pos += 2 + (number * 2);
+			
+			if(number == 0)
+				pos++;  // Avoid infinite loop on malformed data
+		}
+	}
+	
+	MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Packet #%lu captured (%u bytes buffered, %u transactions logged)\n", 
+		sniffer_buffer.packet_count, sniffer_buffer.count, transaction_log.count));
 }
 
 /**
@@ -160,17 +221,17 @@ void MC33816_Sniffer_Process(void)
  */
 void MC33816_Sniffer_PrintBuffer(void)
 {
+	if(sniffer_buffer.count == 0)
+	{
+		//MAIN_DEBUG_TRACE(MC33816, ("  Buffer is empty\n"));
+		return;
+	}
+
 	MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Buffer Status\n"));
 	MAIN_DEBUG_TRACE(MC33816, ("  Packets captured: %lu\n", sniffer_buffer.packet_count));
 	MAIN_DEBUG_TRACE(MC33816, ("  Buffer count: %u bytes\n", sniffer_buffer.count));
 	MAIN_DEBUG_TRACE(MC33816, ("  Overflow count: %lu\n", sniffer_buffer.overflow_count));
 	MAIN_DEBUG_TRACE(MC33816, ("  Is capturing: %u\n", sniffer_buffer.is_capturing));
-	
-	if(sniffer_buffer.count == 0)
-	{
-		MAIN_DEBUG_TRACE(MC33816, ("  Buffer is empty\n"));
-		return;
-	}
 	
 	MAIN_DEBUG_TRACE(MC33816, ("\nCaptured Data:\n"));
 	
@@ -191,7 +252,49 @@ void MC33816_Sniffer_PrintBuffer(void)
 	MAIN_DEBUG_TRACE(MC33816, ("\n\n"));
 	
 	// Try to decode MC33816 protocol
-	MAIN_DEBUG_TRACE(MC33816, ("Decoded Transactions:\n"));
+	// Print decoded transactions with timestamps
+	if(transaction_log.count > 0)
+	{
+		MAIN_DEBUG_TRACE(MC33816, ("Decoded Transactions (with timestamps):\n"));
+		MAIN_DEBUG_TRACE(MC33816, ("Total transactions: %u\n\n", transaction_log.count));
+		
+		uint16_t start = (transaction_log.count >= SNIFFER_MAX_TRANSACTIONS) ? 
+			transaction_log.head : 0;
+		uint16_t count = (transaction_log.count >= SNIFFER_MAX_TRANSACTIONS) ? 
+			SNIFFER_MAX_TRANSACTIONS : transaction_log.count;
+		
+		for(uint16_t i = 0; i < count; i++)
+		{
+			uint16_t idx = (start + i) % SNIFFER_MAX_TRANSACTIONS;
+			MC33816_Transaction_t *txn = &transaction_log.transactions[idx];
+			
+			uint16_t offset = (txn->ctrl_word >> 5) & 0x3FF;
+			uint8_t number = txn->ctrl_word & 0x1F;
+			
+			MAIN_DEBUG_TRACE(MC33816, ("[%lu ms] %s Addr:0x%03X Count:%u", 
+				txn->timestamp,
+				txn->is_read ? "READ " : "WRITE", 
+				offset, 
+				number));
+			
+			// Display data bytes
+			if(txn->data_length > 0 && txn->data_length <= 64)
+			{
+				MAIN_DEBUG_TRACE(MC33816, (" Data:"));
+				uint16_t data_pos = txn->data_offset;
+				for(uint8_t j = 0; j < txn->data_length; j++)
+				{
+					MAIN_DEBUG_TRACE(MC33816, (" %02X", sniffer_buffer.data[data_pos]));
+					data_pos = (data_pos + 1) % SNIFFER_BUFFER_SIZE;
+				}
+			}
+			MAIN_DEBUG_TRACE(MC33816, ("\n"));
+		}
+	}
+	else
+	{
+		// Fallback to old decoding method if no transactions logged
+		MAIN_DEBUG_TRACE(MC33816, ("Decoded Transactions:\n"));
 	pos = sniffer_buffer.tail;
 	uint16_t remaining = sniffer_buffer.count;
 	
@@ -237,6 +340,7 @@ void MC33816_Sniffer_PrintBuffer(void)
 			remaining--;
 		}
 	}
+	}
 }
 
 /**
@@ -250,7 +354,7 @@ void MC33816_Sniffer_ClearBuffer(void)
 	sniffer_buffer.packet_count = 0;
 	sniffer_buffer.overflow_count = 0;
 	
-	MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Buffer cleared\n"));
+	//MAIN_DEBUG_TRACE(MC33816, ("MC33816_Sniffer: Buffer cleared\n"));
 }
 
 /**
@@ -261,9 +365,19 @@ void MC33816_Sniffer_RxCallback(SPI_HandleTypeDef *hspi)
 {
 	if(sniffer_buffer.is_capturing)
 	{
+		// Capture timestamp immediately when data arrives
+		capture_timestamp = HAL_GetTick();
 		sniffer_transfer_complete = 1;
 		
 		// Restart reception for next packet
 		HAL_SPI_Receive_IT(hspi, sniffer_rx_buffer, SNIFFER_PACKET_SIZE);
 	}
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if(hspi->Instance == SPI1)
+    {
+        MC33816_Sniffer_RxCallback(hspi);
+    }
 }

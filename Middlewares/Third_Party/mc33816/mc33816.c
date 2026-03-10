@@ -194,15 +194,15 @@ void MC33186_Test()
 	uint8_t TxData[MC_DATA_SIZE_MAX];
 	uint8_t RxData[MC_DATA_SIZE_MAX];
 
-	HAL_Delay(10);
+	HAL_Delay(20);
 	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MC_START1_GPIO_Port, MC_START1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
-	HAL_Delay(10);
+	HAL_Delay(20);
 	HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_SET);
-	HAL_Delay(4);
-
+	HAL_Delay(100);
+#if 1
 	//EMC_RegAdd_Selection_reg
 	TxData[0] = 0x00;
 	TxData[1] = 0x04;
@@ -243,7 +243,7 @@ void MC33186_Test()
 	TxData[0] = 0x00;
 	TxData[1] = 0x00;
 	MC33186_Register(EMC_RegOp_Read, EMC_RegAdd_Interrupt_status, TxData, RxData, 2);
-
+#endif
 #if 0
 	//EMC_RegAdd_Spi_error
 	TxData[0] = 0x00;

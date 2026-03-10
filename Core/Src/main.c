@@ -29,6 +29,7 @@
 #include "lwiperf_test.h"
 #include "shell.h"
 #include "mc33816.h"
+#include "mc33816_sniffer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -165,7 +166,7 @@ int main(void)
   /* Call PreOsInit function */
   MX_MBEDTLS_Init();
   /* USER CODE BEGIN 2 */
-  MC33186_Test();
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -605,7 +606,7 @@ static void MX_SPI1_Init(void)
   /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Mode = SPI_MODE_MASTER; //SPI_MODE_SLAVE;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT; //SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
@@ -887,9 +888,26 @@ void StartDefaultTask(void *argument)
   lwiperf_init();
 #endif
 
+  MC33186_Test();
+
+  //MC33816_Sniffer_Init();
+  //MC33816_Sniffer_Start();
+
   /* Infinite loop */
   for(;;)
   {
+	  static uint32_t lastPrintTime = 0;
+	  //MC33816_Sniffer_Process();
+
+	  // Print every 5 seconds
+	  if(HAL_GetTick() - lastPrintTime >= 5000)
+	  {
+		  lastPrintTime = HAL_GetTick();
+
+		  //MC33816_Sniffer_PrintBuffer();
+		  //MC33816_Sniffer_ClearBuffer();
+	  }
+
     osDelay(1);
   }
   /* USER CODE END 5 */
