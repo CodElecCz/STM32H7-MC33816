@@ -49,7 +49,7 @@
 
 #include "stdint.h"
 #include "stdbool.h"
-#include "MC33816_LoadData.h"
+#include "bin/MC33816_data.h"
 
 #define CODE_RAM1 0
 #define CODE_RAM2 1
