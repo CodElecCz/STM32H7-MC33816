@@ -57,7 +57,6 @@ int count = 0;
 int drv_int_counter = 0;
 volatile char states = 0;
 volatile int flag_IRQB = 0;
-volatile int flag_EOI = 0;
 volatile int seq_counter = 0;
 unsigned short rxData = 0;
 unsigned short cksys_missing_error = 0;

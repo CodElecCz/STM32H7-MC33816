@@ -47,19 +47,12 @@
 #ifndef MC33816_SPI_H_
 #define MC33816_SPI_H_
 
-#include "stdbool.h"
+#include <stdbool.h>
 
-#define LPSPI_0  0
-#define READ  true
-#define WRITE false
-
-//unsigned short SPIread;
-extern bool flag_spi;
-extern unsigned char masterDataSend[2];
-extern unsigned char masterDataReceive[2];
+#define READ  		true
+#define WRITE 		false
 
 void init_SPI(void);
-void Lpspi0_Send(unsigned char spiMsg);
 unsigned short send_16bit_SPI(unsigned short data16);
 
 

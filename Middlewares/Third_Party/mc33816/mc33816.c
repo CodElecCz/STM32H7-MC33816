@@ -453,14 +453,14 @@ bool OA_path_check(_Bool OA1_check, _Bool OA2_check)
     {
         send_single_SPI_Cmd(WRITE, io_oa_out1_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
         OA_value = read_ADC(1);
-        if ( OA_value > 0xF5) OA1_test =1;        // No fault F5x19.6mV = 4.8V on OA meaning VCC2P5 > 2.4V (gain of 2)
+        if ( OA_value > 0xF5) OA1_test = 1;        // No fault F5x19.6mV = 4.8V on OA meaning VCC2P5 > 2.4V (gain of 2)
         else OA1_test =0;
     }
     if(OA2_check == 1)  // OA2
     {
         send_single_SPI_Cmd(WRITE, io_oa_out2_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
         OA_value = read_ADC1(2);
-        if ( OA_value > 0xF5) OA2_test =1;
+        if ( OA_value > 0xF5) OA2_test = 1;
         else OA2_test =0;
     }
 
