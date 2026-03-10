@@ -47,8 +47,8 @@
 #ifndef MC33816_H_
 #define MC33816_H_
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "bin/MC33816_data.h"
 
 #define CODE_RAM1 0

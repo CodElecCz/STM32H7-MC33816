@@ -44,8 +44,8 @@
  *
  */
 
-#include "stddef.h"
-#include "lpspi.h"
+#include <stddef.h>
+#include "mc33816_spi.h"
 
 // SPI transfer constants
 const unsigned short TIMEOUT = 1000;

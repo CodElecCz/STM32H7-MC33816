@@ -37,7 +37,7 @@
 * of this code.
 *******************************************************************************/
 
-#include "system.h"
+#include "mc33816_system.h"
 
 const unsigned long  DELAY_FACTOR = 1599;   // This needs to be set for the specific MCU being used
 const unsigned long  DELAY_FACTOR2 = 159;

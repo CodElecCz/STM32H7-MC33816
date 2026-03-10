@@ -44,8 +44,8 @@
  *
  */
 
-#ifndef LPSPI_H_
-#define LPSPI_H_
+#ifndef MC33816_SPI_H_
+#define MC33816_SPI_H_
 
 #include "stdbool.h"
 
@@ -53,7 +53,7 @@
 #define READ  true
 #define WRITE false
 
-unsigned short SPIread;
+//unsigned short SPIread;
 extern bool flag_spi;
 extern unsigned char masterDataSend[2];
 extern unsigned char masterDataReceive[2];

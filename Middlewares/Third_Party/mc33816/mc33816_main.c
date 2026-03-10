@@ -42,9 +42,9 @@
  *
  */
 
-#include "main.h"
-#include "MC33816_irq.h"
-#include "MC33816_spi_map.h"
+#include "mc33816_main.h"
+#include "mc33816_irq.h"
+#include "mc33816_spi_map.h"
 
 //========================================================================================
 // Global Variables
@@ -85,7 +85,7 @@ unsigned short dcdc_error = 0;
 // Return type     : int
 // Argument        : void
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-int main(void)
+int MC33816_main(void)
 {
     // Initialize the hardware
     init_CLOCK();

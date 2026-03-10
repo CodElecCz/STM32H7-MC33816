@@ -37,8 +37,8 @@
 * of this code.
 *******************************************************************************/
 
-#ifndef SYSTEM_H_
-#define SYSTEM_H_
+#ifndef MC33816_SYSTEM_H_
+#define MC33816_SYSTEM_H_
 
 #define LOW       0
 #define HIGH      1

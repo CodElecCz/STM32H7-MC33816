@@ -37,11 +37,11 @@
 * of this code.
 *******************************************************************************/
 
-#include "lpspi.h"
-#include "system.h"
-#include "MC33816.h"
-#include "MC33816_irq.h"
-#include "MC33816_spi_map.h"
+#include "mc33816_spi.h"
+#include "mc33816_system.h"
+#include "mc33816.h"
+#include "mc33816_irq.h"
+#include "mc33816_spi_map.h"
 
 extern int drv_int_counter;
 extern const int sw_retry;
@@ -201,10 +201,10 @@ void ProcessAutomaticInterrupts()
 
     // ERROR uc1ch1
     auto_irq = send_single_SPI_Cmd(READ, main_Interrupt_register, 0x00) & 0x000F;  // since this register is latched on first IRQ need to check if other occured
-    if ((auto_irq & 0x2) == 1)  // Error occurred on uc1ch1
+    if ((auto_irq & 0x2) == 0x2)  // Error occurred on uc1ch1
     {
         status = send_single_SPI_Cmd(READ, ch1_status_reg_uc1, 0x00);  // Read Status register 1 to check which injector failed
-        if ((status & 0x1) == 1)  // INJ3 fails b0 at 1
+        if ((status & 0x1) == 0x1)  // INJ3 fails b0 at 1
         {
             inj3_error++;
             AutoErrStatus = AutoErr(INJ3);  // Check which fault happened
@@ -218,7 +218,7 @@ void ProcessAutomaticInterrupts()
                 send_single_SPI_Cmd(WRITE, ch1_ctrl_reg_uc1, 0x40);  // Clear the fault by writing the control register b6
             }
         }
-        if ((status & 0x2) == 2)  // INJ4 fails b0 at 1
+        if ((status & 0x2) == 0x2)  // INJ4 fails b0 at 1
         {
             inj4_error++;
             AutoErrStatus = AutoErr(INJ4);  // Check which fault happened

@@ -44,11 +44,11 @@
  *
  */
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#ifndef MC33816_MAIN_H_
+#define MC33816_MAIN_H_
 
-#include "lpspi.h"
-#include "MC33816.h"
-#include "system.h"
+#include "mc33816_spi.h"
+#include "mc33816.h"
+#include "mc33816_system.h"
 
 #endif /* MAIN_H_ */

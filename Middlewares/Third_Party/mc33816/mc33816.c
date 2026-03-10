@@ -37,12 +37,12 @@
 * of this code.
 *******************************************************************************/
 
-#include "stddef.h"
-#include "system.h"
-#include "MC33816.h"
-#include "MC33816_spi_map.h"
-#include "MC33816_irq.h"
-#include "lpspi.h"
+#include <stddef.h>
+#include "mc33816_system.h"
+#include "mc33816.h"
+#include "mc33816_spi_map.h"
+#include "mc33816_irq.h"
+#include "mc33816_spi.h"
 
 const int MAX_SPI_MODE_A_TRANSFER_SIZE = 31;  // max size for register config transfer
 
