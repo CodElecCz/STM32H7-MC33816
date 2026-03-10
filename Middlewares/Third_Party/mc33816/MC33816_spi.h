@@ -38,47 +38,29 @@
 *******************************************************************************/
 
 /*
- * MC33816.h
+ * lpspi.h
  *
- *  MC33816 Header File
+ *  SPI Header File
  *
  */
 
-#ifndef MC33816_H_
-#define MC33816_H_
+#ifndef LPSPI_H_
+#define LPSPI_H_
 
-#include "stdint.h"
 #include "stdbool.h"
-#include "MC33816_LoadData.h"
 
-#define CODE_RAM1 0
-#define CODE_RAM2 1
-#define DATA_RAM  2
+#define LPSPI_0  0
+#define READ  true
+#define WRITE false
 
-#define CH1_REG   0
-#define CH2_REG   1
-#define DIAG_REG  2
-#define IO_REG    3
-#define MAIN_REG  4
+unsigned short SPIread;
+extern bool flag_spi;
+extern unsigned char masterDataSend[2];
+extern unsigned char masterDataReceive[2];
 
-uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData);
-bool send_SPI_Cmd(bool bRead, uint16_t start_addr, uint16_t length, uint16_t* pTxData, uint16_t* pRxData);
+void init_SPI(void);
+void Lpspi0_Send(unsigned char spiMsg);
+unsigned short send_16bit_SPI(unsigned short data16);
 
 
-void ProgramDevice();
-void download_RAM(int target);
-void download_register(int r_target);
-
-bool ID_Check ();
-bool CLK_check();
-bool Driver_Status_Init ();
-bool DRVEN_check();
-bool BIST_check(_Bool BIST_run);
-bool OA_path_check(_Bool OA1_check, _Bool OA2_check);
-bool Checksum_check();
-uint16_t Read_VbatADC ();
-unsigned long Bootstrap_check();
-void Device_Lock_Unlock(unsigned char Lock_Unlock);
-void Tracer(unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable);
-
-#endif /* MC33816_H_ */
+#endif /* LPSPI_H_ */

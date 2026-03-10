@@ -38,47 +38,51 @@
 *******************************************************************************/
 
 /*
- * MC33816.h
+ * lpspi.c
  *
- *  MC33816 Header File
+ *  SPI Source File
  *
  */
 
-#ifndef MC33816_H_
-#define MC33816_H_
+#include "stddef.h"
+#include "lpspi.h"
 
-#include "stdint.h"
-#include "stdbool.h"
-#include "MC33816_LoadData.h"
+// SPI transfer constants
+const unsigned short TIMEOUT = 1000;
+const size_t transferByteCount = 2U;
 
-#define CODE_RAM1 0
-#define CODE_RAM2 1
-#define DATA_RAM  2
-
-#define CH1_REG   0
-#define CH2_REG   1
-#define DIAG_REG  2
-#define IO_REG    3
-#define MAIN_REG  4
-
-uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData);
-bool send_SPI_Cmd(bool bRead, uint16_t start_addr, uint16_t length, uint16_t* pTxData, uint16_t* pRxData);
+// SPI transmit and receive buffers
+unsigned char masterDataSend[2];
+unsigned char masterDataReceive[2];
 
 
-void ProgramDevice();
-void download_RAM(int target);
-void download_register(int r_target);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Function name   : init_SPI
+// Description     : Initializes the SPI interface
+// Return type     : void
+// Argument        : void
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+void init_SPI(void)
+{
+    // Add code to initialize the SPI interface
+}
 
-bool ID_Check ();
-bool CLK_check();
-bool Driver_Status_Init ();
-bool DRVEN_check();
-bool BIST_check(_Bool BIST_run);
-bool OA_path_check(_Bool OA1_check, _Bool OA2_check);
-bool Checksum_check();
-uint16_t Read_VbatADC ();
-unsigned long Bootstrap_check();
-void Device_Lock_Unlock(unsigned char Lock_Unlock);
-void Tracer(unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Function name   : send_16bit_SPI
+// Description     : Sends a 16 bit SPI word to the device
+// Return type     : uint16_t - Data received from the device
+// Argument        : unsigned short data16 - Data to send to the device
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+unsigned short send_16bit_SPI(unsigned short data16)
+{
+    unsigned short rxData = 0;
 
-#endif /* MC33816_H_ */
+    // Send data from master
+    masterDataSend[0] = data16 & 0xFF;
+    masterDataSend[1] = (data16 >> 8) & 0xFF;
+
+    // Add code to send a SPI word
+
+    rxData = ((masterDataReceive[1] << 8) & 0xFF00) | masterDataReceive[0];
+    return rxData;
+}

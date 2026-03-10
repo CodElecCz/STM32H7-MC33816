@@ -37,48 +37,50 @@
 * of this code.
 *******************************************************************************/
 
-/*
- * MC33816.h
- *
- *  MC33816 Header File
- *
- */
+#ifndef SYSTEM_H_
+#define SYSTEM_H_
 
-#ifndef MC33816_H_
-#define MC33816_H_
+#define LOW       0
+#define HIGH      1
 
-#include "stdint.h"
-#include "stdbool.h"
-#include "MC33816_LoadData.h"
+extern void init_GPIO(void);
+extern void set_reset_pin(int state);
+extern void set_drven_pin(int state);
 
-#define CODE_RAM1 0
-#define CODE_RAM2 1
-#define DATA_RAM  2
+#define SET_RESETB_HIGH  // Add code to set GPIO pin
+#define SET_RESETB_LOW   // Add code to set GPIO pin
+#define SET_DRVEN_HIGH   // Add code to set GPIO pin
+#define SET_DRVEN_LOW    // Add code to set GPIO pin
+#define SET_START1_HIGH  // Add code to set GPIO pin
+#define SET_START1_LOW   // Add code to set GPIO pin
+#define SET_START2_HIGH  // Add code to set GPIO pin
+#define SET_START2_LOW   // Add code to set GPIO pin
+#define SET_START3_HIGH  // Add code to set GPIO pin
+#define SET_START3_LOW   // Add code to set GPIO pin
+#define SET_START4_HIGH  // Add code to set GPIO pin
+#define SET_START4_LOW   // Add code to set GPIO pin
+#define SET_START5_HIGH  // Add code to set GPIO pin
+#define SET_START5_LOW   // Add code to set GPIO pin
+#define SET_START6_HIGH  // Add code to set GPIO pin
+#define SET_START6_LOW   // Add code to set GPIO pin
+#define SET_START7_HIGH  // Add code to set GPIO pin
+#define SET_START7_LOW   // Add code to set GPIO pin
 
-#define CH1_REG   0
-#define CH2_REG   1
-#define DIAG_REG  2
-#define IO_REG    3
-#define MAIN_REG  4
+#define PTC12  0x1000
+#define PTC13  0x2000
+#define PTA3   0x8
+#define Flag1  0x100
 
-uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData);
-bool send_SPI_Cmd(bool bRead, uint16_t start_addr, uint16_t length, uint16_t* pTxData, uint16_t* pRxData);
+void init_ADC(void);
+unsigned short read_ADC(unsigned char channel);
+unsigned short read_ADC1(unsigned char channel);
 
+void init_CLOCK(void);
 
-void ProgramDevice();
-void download_RAM(int target);
-void download_register(int r_target);
+void delay(unsigned long msDelay);
+void delay100us(unsigned long delay);
 
-bool ID_Check ();
-bool CLK_check();
-bool Driver_Status_Init ();
-bool DRVEN_check();
-bool BIST_check(_Bool BIST_run);
-bool OA_path_check(_Bool OA1_check, _Bool OA2_check);
-bool Checksum_check();
-uint16_t Read_VbatADC ();
-unsigned long Bootstrap_check();
-void Device_Lock_Unlock(unsigned char Lock_Unlock);
-void Tracer(unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable);
+extern void PWM_1MHz (void);
+extern void InputCaptureTimer_init(void);
 
-#endif /* MC33816_H_ */
+#endif /* SYSTEM_H_ */

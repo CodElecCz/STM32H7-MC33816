@@ -38,47 +38,34 @@
 *******************************************************************************/
 
 /*
- * MC33816.h
+ * MC33816_dram.h
  *
- *  MC33816 Header File
+ *  DRAM Header File
  *
  */
 
-#ifndef MC33816_H_
-#define MC33816_H_
+#ifndef MC33816_DRAM_H_
+#define MC33816_DRAM_H_
 
-#include "stdint.h"
-#include "stdbool.h"
-#include "MC33816_LoadData.h"
+// DRAM 1 Parameter Addresses
+#define MC33816_D1_Iboost  0x00
+#define MC33816_D1_Ipeak  0x01
+#define MC33816_D1_Ihold  0x02
+#define MC33816_D1_Tpeak_off  0x03
+#define MC33816_D1_Tpeak_tot  0x04
+#define MC33816_D1_Tbypass  0x05
+#define MC33816_D1_Thold_off  0x06
+#define MC33816_D1_Thold_tot  0x07
+#define MC33816_D1_injMaxTBoost  0x08
 
-#define CODE_RAM1 0
-#define CODE_RAM2 1
-#define DATA_RAM  2
+// DRAM 2 Parameter Addresses
+#define MC33816_D2_Vboost_L  0x40
+#define MC33816_D2_Vboost_H  0x41
+#define MC33816_D2_Iboost_L  0x42
+#define MC33816_D2_Iboost_H  0x43
+#define MC33816_D2_Ipeak  0x45
+#define MC33816_D2_Ihold  0x46
+#define MC33816_D2_Thold_off  0x47
+#define MC33816_D2_Thold_tot  0x48
 
-#define CH1_REG   0
-#define CH2_REG   1
-#define DIAG_REG  2
-#define IO_REG    3
-#define MAIN_REG  4
-
-uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData);
-bool send_SPI_Cmd(bool bRead, uint16_t start_addr, uint16_t length, uint16_t* pTxData, uint16_t* pRxData);
-
-
-void ProgramDevice();
-void download_RAM(int target);
-void download_register(int r_target);
-
-bool ID_Check ();
-bool CLK_check();
-bool Driver_Status_Init ();
-bool DRVEN_check();
-bool BIST_check(_Bool BIST_run);
-bool OA_path_check(_Bool OA1_check, _Bool OA2_check);
-bool Checksum_check();
-uint16_t Read_VbatADC ();
-unsigned long Bootstrap_check();
-void Device_Lock_Unlock(unsigned char Lock_Unlock);
-void Tracer(unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable);
-
-#endif /* MC33816_H_ */
+#endif /* MC33816_DRAM_H_ */

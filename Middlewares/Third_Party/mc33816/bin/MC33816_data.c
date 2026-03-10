@@ -45,7 +45,7 @@
 // ECU: IDE Project
 // Project: AN_Diag
 
-#include "MC33816_LoadData.h"
+#include "MC33816_data.h"
 
 // Data to be loaded into the Code RAM 1 memory space
 //ch1.cip.hex

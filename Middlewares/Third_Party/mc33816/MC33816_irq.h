@@ -38,47 +38,41 @@
 *******************************************************************************/
 
 /*
- * MC33816.h
+ * MC33816_irq.h
  *
- *  MC33816 Header File
+ *  MC33816 Interrupt Header File
  *
  */
-
-#ifndef MC33816_H_
-#define MC33816_H_
-
+ 
+#ifndef MC33816_IRQ_H_
+#define MC33816_IRQ_H_
+ 
 #include "stdint.h"
-#include "stdbool.h"
-#include "MC33816_LoadData.h"
+ 
+//========================================================================================
+// extern Function Declarations
+//========================================================================================
+extern void ProcessDriverInterrupts();
+extern void ProcessAutomaticInterrupts();
+extern void ProcessSoftwareInterrupts();
+uint16_t AutoErr(unsigned char INJ);
 
-#define CODE_RAM1 0
-#define CODE_RAM2 1
-#define DATA_RAM  2
+const typedef enum {
+    INJ1 =  1,
+    INJ2,
+    INJ3,
+    INJ4,
+    INJ5,
+    INJ6,
+    FP,
+}INJ;
 
-#define CH1_REG   0
-#define CH2_REG   1
-#define DIAG_REG  2
-#define IO_REG    3
-#define MAIN_REG  4
-
-uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData);
-bool send_SPI_Cmd(bool bRead, uint16_t start_addr, uint16_t length, uint16_t* pTxData, uint16_t* pRxData);
+#define NOFAULT   0
+#define GND_SHORT 1
+#define BAT_SHORT 2
+#define INJ_OPEN  4
+#define MOS_OPEN  8
 
 
-void ProgramDevice();
-void download_RAM(int target);
-void download_register(int r_target);
 
-bool ID_Check ();
-bool CLK_check();
-bool Driver_Status_Init ();
-bool DRVEN_check();
-bool BIST_check(_Bool BIST_run);
-bool OA_path_check(_Bool OA1_check, _Bool OA2_check);
-bool Checksum_check();
-uint16_t Read_VbatADC ();
-unsigned long Bootstrap_check();
-void Device_Lock_Unlock(unsigned char Lock_Unlock);
-void Tracer(unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable);
-
-#endif /* MC33816_H_ */
+#endif /* MC33816_IRQ_H_ */
