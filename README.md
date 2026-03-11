@@ -1,12 +1,12 @@
 # STM32H7 - MC33816
 
-This repository contains firmware and project files for integrating the MC33816 motor-driver device with an STM32H7 microcontroller. This STM32H7-based board is the control board for the MC33816 development kit and communicates with the MC33816 over SPI. It includes STM32CubeMX (.ioc) configuration, STM32CubeIDE launch files, linker scripts and source folders produced by STM32CubeIDE.
+This repository contains firmware and project files for integrating the MC33816 injector driver with an STM32H7 microcontroller. This STM32H7-based board is the control board for the MC33816 development kit and communicates with the MC33816 over SPI. The MC33816 is used as a fuel injector / injector driver in automotive and embedded motor-control applications. The project includes STM32CubeMX (.ioc) configuration, STM32CubeIDE launch files, linker scripts and source folders produced by STM32CubeIDE.
 
-Keywords: mc33816, MC33816, STM32H7, STM32CubeIDE, STM32CubeMX, firmware, embedded, motor driver, NXP, CAN, SPI, hardware integration, example project, control board, dev kit.
+Keywords: mc33816, MC33816, injector, injector driver, fuel injector, STM32H7, STM32CubeIDE, STM32CubeMX, firmware, embedded, motor driver, NXP, CAN, SPI, hardware integration, example project, control board, dev kit, ECU.
 
 ## Purpose
 
-- Provide a reference and starting project for developers integrating the MC33816 with STM32H7-based systems.
+- Provide a reference and starting project for developers integrating the MC33816 injector driver with STM32H7-based systems.
 - Consolidate board- and MCU-specific configuration so the project can be opened, built and flashed from STM32CubeIDE or other ARM toolchains.
 
 ## Repository contents
@@ -34,6 +34,7 @@ Keywords: mc33816, MC33816, STM32H7, STM32CubeIDE, STM32CubeMX, firmware, embedd
 
 - Review and adapt pinout and clock configuration to match your hardware. The provided .ioc file contains the project's configuration used by CubeMX.
 - Verify MCU and memory settings in the linker scripts before flashing to custom hardware.
+- Confirm SPI pin assignments and timing when connecting to the MC33816 injector driver.
 - Keep any sensitive keys, credentials, or private data out of the repository.
 
 ## Contributing
