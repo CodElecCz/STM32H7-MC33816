@@ -76,6 +76,7 @@ void Error_Handler(void);
 #define MC_RST_GPIO_Port GPIOA
 #define MC_IRQ_Pin GPIO_PIN_7
 #define MC_IRQ_GPIO_Port GPIOE
+#define MC_IRQ_EXTI_IRQn EXTI9_5_IRQn
 #define MC_DBG_Pin GPIO_PIN_8
 #define MC_DBG_GPIO_Port GPIOE
 #define MC_START5_Pin GPIO_PIN_12
