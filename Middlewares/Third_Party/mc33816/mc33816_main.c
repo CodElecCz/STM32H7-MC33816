@@ -84,7 +84,7 @@ unsigned short dcdc_error = 0;
 // Return type     : int
 // Argument        : void
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-int MC33816_main(void)
+int MC33816_init(void)
 {
     // Initialize the hardware
     init_CLOCK();
@@ -117,47 +117,50 @@ int MC33816_main(void)
     SET_DRVEN_HIGH;
     delay(100);         // Wait before sending start pulse to let DCDC reach 65V
 
-    for (;;)
-    {
-
-        //========================================================================================
-        // START OF IRQB CHECK
-        //========================================================================================
-        if (flag_IRQB == 1)
-        {
-            flag_IRQB = 0;
-
-            // Read interrupt register
-            // This latches only the first interrupt and only gets cleared when all interrupt are cleared
-            interrupt_reg = send_single_SPI_Cmd(READ, main_Interrupt_register, 0x00);
-
-            if (interrupt_reg != 0)
-            {
-                // Driver disable IRQ
-                drv_irq = interrupt_reg & 0x1F00;
-                if (drv_irq != 0)  // One of the halt bits is at 1
-                {
-                    ProcessDriverInterrupts();
-                }
-
-                // Automatic IRQ (halt bits)
-                auto_irq = interrupt_reg & 0x000F;
-                if (auto_irq != 0)  // One of the halt bits is at 1
-                {
-                    ProcessAutomaticInterrupts();
-                    ProcessSoftwareInterrupts();  // Needed in case a SW interrupt also happened
-                }
-
-                // Software IRQ (irq bits)
-                sw_irq = interrupt_reg & 0x00F0;
-                if (sw_irq != 0)  // One of the irq bits is at 1
-                {
-                    ProcessSoftwareInterrupts();
-                    ProcessAutomaticInterrupts();
-                }
-            } // End of Interrupt auto SW interrupt
-        }
-    } // End of for loop (main)
-
     return 0;
-} // end of main
+}
+
+int MC33816_process(void)
+{
+
+	//========================================================================================
+	// START OF IRQB CHECK
+	//========================================================================================
+	if (flag_IRQB == 1)
+	{
+		flag_IRQB = 0;
+
+		// Read interrupt register
+		// This latches only the first interrupt and only gets cleared when all interrupt are cleared
+		interrupt_reg = send_single_SPI_Cmd(READ, main_Interrupt_register, 0x00);
+
+		if (interrupt_reg != 0)
+		{
+			// Driver disable IRQ
+			drv_irq = interrupt_reg & 0x1F00;
+			if (drv_irq != 0)  // One of the halt bits is at 1
+			{
+				ProcessDriverInterrupts();
+			}
+
+			// Automatic IRQ (halt bits)
+			auto_irq = interrupt_reg & 0x000F;
+			if (auto_irq != 0)  // One of the halt bits is at 1
+			{
+				ProcessAutomaticInterrupts();
+				ProcessSoftwareInterrupts();  // Needed in case a SW interrupt also happened
+			}
+
+			// Software IRQ (irq bits)
+			sw_irq = interrupt_reg & 0x00F0;
+			if (sw_irq != 0)  // One of the irq bits is at 1
+			{
+				ProcessSoftwareInterrupts();
+				ProcessAutomaticInterrupts();
+			}
+		} // End of Interrupt auto SW interrupt
+	}
+
+	return 0;
+} // End of for loop (main)
+

@@ -51,4 +51,7 @@
 #include "mc33816.h"
 #include "mc33816_system.h"
 
+int MC33816_init(void);
+int MC33816_process(void);
+
 #endif /* MAIN_H_ */
