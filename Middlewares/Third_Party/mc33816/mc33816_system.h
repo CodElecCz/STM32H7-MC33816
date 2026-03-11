@@ -40,6 +40,8 @@
 #ifndef MC33816_SYSTEM_H_
 #define MC33816_SYSTEM_H_
 
+#include "main.h"
+
 #define LOW       0
 #define HIGH      1
 
@@ -47,24 +49,24 @@ extern void init_GPIO(void);
 extern void set_reset_pin(int state);
 extern void set_drven_pin(int state);
 
-#define SET_RESETB_HIGH  // Add code to set GPIO pin
-#define SET_RESETB_LOW   // Add code to set GPIO pin
-#define SET_DRVEN_HIGH   // Add code to set GPIO pin
-#define SET_DRVEN_LOW    // Add code to set GPIO pin
-#define SET_START1_HIGH  // Add code to set GPIO pin
-#define SET_START1_LOW   // Add code to set GPIO pin
-#define SET_START2_HIGH  // Add code to set GPIO pin
-#define SET_START2_LOW   // Add code to set GPIO pin
-#define SET_START3_HIGH  // Add code to set GPIO pin
-#define SET_START3_LOW   // Add code to set GPIO pin
-#define SET_START4_HIGH  // Add code to set GPIO pin
-#define SET_START4_LOW   // Add code to set GPIO pin
-#define SET_START5_HIGH  // Add code to set GPIO pin
-#define SET_START5_LOW   // Add code to set GPIO pin
-#define SET_START6_HIGH  // Add code to set GPIO pin
-#define SET_START6_LOW   // Add code to set GPIO pin
-#define SET_START7_HIGH  // Add code to set GPIO pin
-#define SET_START7_LOW   // Add code to set GPIO pin
+#define SET_RESETB_HIGH  HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_SET);
+#define SET_RESETB_LOW   HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
+#define SET_DRVEN_HIGH   HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_SET);
+#define SET_DRVEN_LOW    HAL_GPIO_WritePin(MC_DRV_GPIO_Port, MC_DRV_Pin, GPIO_PIN_RESET);
+#define SET_START1_HIGH  HAL_GPIO_WritePin(MC_START1_GPIO_Port, MC_START1_Pin, GPIO_PIN_SET);
+#define SET_START1_LOW   HAL_GPIO_WritePin(MC_START1_GPIO_Port, MC_START1_Pin, GPIO_PIN_RESET);
+#define SET_START2_HIGH  HAL_GPIO_WritePin(MC_START2_GPIO_Port, MC_START2_Pin, GPIO_PIN_SET);
+#define SET_START2_LOW   HAL_GPIO_WritePin(MC_START2_GPIO_Port, MC_START2_Pin, GPIO_PIN_RESET);
+#define SET_START3_HIGH  HAL_GPIO_WritePin(MC_START3_GPIO_Port, MC_START3_Pin, GPIO_PIN_SET);
+#define SET_START3_LOW   HAL_GPIO_WritePin(MC_START3_GPIO_Port, MC_START3_Pin, GPIO_PIN_RESET);
+#define SET_START4_HIGH  HAL_GPIO_WritePin(MC_START4_GPIO_Port, MC_START4_Pin, GPIO_PIN_SET);
+#define SET_START4_LOW   HAL_GPIO_WritePin(MC_START4_GPIO_Port, MC_START4_Pin, GPIO_PIN_RESET);
+#define SET_START5_HIGH  HAL_GPIO_WritePin(MC_START5_GPIO_Port, MC_START5_Pin, GPIO_PIN_SET);
+#define SET_START5_LOW   HAL_GPIO_WritePin(MC_START5_GPIO_Port, MC_START5_Pin, GPIO_PIN_RESET);
+#define SET_START6_HIGH  HAL_GPIO_WritePin(MC_START6_GPIO_Port, MC_START6_Pin, GPIO_PIN_SET);
+#define SET_START6_LOW   HAL_GPIO_WritePin(MC_START6_GPIO_Port, MC_START6_Pin, GPIO_PIN_RESET);
+#define SET_START7_HIGH  HAL_GPIO_WritePin(MC_START7_GPIO_Port, MC_START7_Pin, GPIO_PIN_SET);
+#define SET_START7_LOW   HAL_GPIO_WritePin(MC_START7_GPIO_Port, MC_START7_Pin, GPIO_PIN_RESET);
 
 #define PTC12  0x1000
 #define PTC13  0x2000
