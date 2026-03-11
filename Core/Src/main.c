@@ -28,8 +28,7 @@
 #include "lwip.h"
 #include "lwiperf_test.h"
 #include "shell.h"
-#include "test/mc33816_test.h"
-#include "test/mc33816_sniffer.h"
+#include "mc33816_main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -770,17 +769,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, MC_FLAG2_Pin|MC_FLAG1_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(MC_RST_GPIO_Port, MC_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(MC_DBG_GPIO_Port, MC_DBG_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, MC_START5_Pin|MC_START2_Pin|MC_DRV_Pin|GPIO_PIN_7
-                          |MC_START4_Pin|MC_START1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, MC_START5_Pin|MC_START2_Pin|MC_DRV_Pin|MC_START4_Pin
+                          |MC_START1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
@@ -788,14 +784,10 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, MC_START6_Pin|MC_START3_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOG, MC_FLAG3_Pin|MC_FLAG0_Pin, GPIO_PIN_RESET);
-
   /*Configure GPIO pins : MC_FLAG2_Pin MC_FLAG1_Pin */
   GPIO_InitStruct.Pin = MC_FLAG2_Pin|MC_FLAG1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pin : MC_RST_Pin */
@@ -807,7 +799,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : MC_IRQ_Pin */
   GPIO_InitStruct.Pin = MC_IRQ_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(MC_IRQ_GPIO_Port, &GPIO_InitStruct);
 
@@ -830,7 +822,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : SPI_CS_Pin */
   GPIO_InitStruct.Pin = SPI_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(SPI_CS_GPIO_Port, &GPIO_InitStruct);
 
@@ -843,17 +835,9 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : MC_FLAG3_Pin MC_FLAG0_Pin */
   GPIO_InitStruct.Pin = MC_FLAG3_Pin|MC_FLAG0_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -888,10 +872,14 @@ void StartDefaultTask(void *argument)
   lwiperf_init();
 #endif
 
+  MC33816_init();
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	MC33816_process();
+
+	osDelay(1);
   }
   /* USER CODE END 5 */
 }
