@@ -145,6 +145,34 @@ int MC33816_init(void)
     };
 
     // Add code to enable interrupts
+    flag_IRQB = 0;
+    uint8_t pin_IRQ = GET_IRQ_STATE();
+    if(pin_IRQ == 0)
+	{
+		MAIN_DEBUG_ERR(MC33816, ("MC33816 IRQ state 0\n"));
+		return -1;
+	};
+    uint8_t pin_FLAG0 = GET_FLAG0_STATE();
+    if(pin_FLAG0 == 0)
+	{
+    	//green led on devkit
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 FLAG0 state 0\n"));
+		return -1;
+	};
+    uint8_t pin_FLAG1 = GET_FLAG1_STATE();
+    if(pin_FLAG1 == 0)
+	{
+    	//green led on devkit
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 FLAG1 state 0\n"));
+		return -1;
+	};
+    uint8_t pin_FLAG2 = GET_FLAG2_STATE();
+    if(pin_FLAG2 == 0)
+	{
+    	//green led on devkit
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 FLAG2 state 0\n"));
+		return -1;
+	};
 
     SET_DRVEN_HIGH;
     delay(100);         // Wait before sending start pulse to let DCDC reach 65V
@@ -154,7 +182,6 @@ int MC33816_init(void)
 
 int MC33816_process(void)
 {
-
 	//========================================================================================
 	// START OF IRQB CHECK
 	//========================================================================================

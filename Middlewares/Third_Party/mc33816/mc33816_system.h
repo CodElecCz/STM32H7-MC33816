@@ -68,6 +68,12 @@ extern void set_drven_pin(int state);
 #define SET_START7_HIGH  HAL_GPIO_WritePin(MC_START7_GPIO_Port, MC_START7_Pin, GPIO_PIN_SET);
 #define SET_START7_LOW   HAL_GPIO_WritePin(MC_START7_GPIO_Port, MC_START7_Pin, GPIO_PIN_RESET);
 
+#define GET_IRQ_STATE()   HAL_GPIO_ReadPin(MC_IRQ_GPIO_Port, MC_IRQ_Pin)
+#define GET_FLAG0_STATE()   HAL_GPIO_ReadPin(MC_FLAG0_GPIO_Port, MC_FLAG0_Pin)
+#define GET_FLAG1_STATE()   HAL_GPIO_ReadPin(MC_FLAG1_GPIO_Port, MC_FLAG1_Pin)
+#define GET_FLAG2_STATE()   HAL_GPIO_ReadPin(MC_FLAG2_GPIO_Port, MC_FLAG2_Pin)
+#define GET_FLAG3_STATE()   HAL_GPIO_ReadPin(MC_FLAG3_GPIO_Port, MC_FLAG3_Pin)
+
 #define PTC12  0x1000
 #define PTC13  0x2000
 #define PTA3   0x8
