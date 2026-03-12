@@ -58,7 +58,7 @@ The following table shows the pin connections between the NUCLEO-H753ZI board an
 | MC_OA_1     | PA0 (ADC1_INP16)  | OA_OUT1         | Operational Amplifier Output 1       |
 | MC_OA_2     | PA1 (ADC1_INP17)  | OA_OUT2         | Operational Amplifier Output 2       |
 
-**Note**: MC_OA_1 and MC_OA_2 signals require voltage divider (5V to 3.3V) to protect STM32H7 ADC inputs. The MC33816 outputs operate at 5V while STM32H7 ADC inputs are 3.3V tolerant.
+**Note**: MC_OA_1 and MC_OA_2 signals require voltage divider (5V to 3V) to protect STM32H7 ADC inputs. The MC33816 outputs operate at 5V while STM32H7 ADC inputs are 3.3V tolerant.
 
 #### Injector Start Signals (PWM Control)
 
