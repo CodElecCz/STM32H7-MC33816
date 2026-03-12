@@ -4,6 +4,70 @@ This repository contains firmware and project files for integrating the MC33816 
 
 Keywords: mc33816, MC33816, injector, injector driver, fuel injector, STM32H7, STM32CubeIDE, STM32CubeMX, firmware, embedded, motor driver, NXP, CAN, SPI, hardware integration, example project, control board, dev kit, ECU.
 
+## MC33816 Development Kit
+
+The **MC33816 Fuel Injector Driver** is a high-performance integrated circuit from NXP designed for automotive engine control applications. The MC33816 provides precise control of fuel injectors with features including SPI communication, advanced diagnostics, peak-and-hold drive capability, and integrated protection mechanisms.
+
+The development kit combines the **NUCLEO-H753ZI** board (STM32H753ZI microcontroller) as the control platform with the **KIT33816FRDMUG** evaluation board for the MC33816 injector driver IC. This setup provides a complete reference platform for developing and testing fuel injection control algorithms.
+
+### Documentation
+
+- **NUCLEO-H753ZI Schematics**: [mb1364-h753zi-c01-schematic.pdf](Documents/h753zi-nucleo/mb1364-h753zi-c01-schematic.pdf)
+- **NUCLEO-H753ZI User Manual**: [um2407-stm32h7-nucleo144-boards-mb1364-stmicroelectronics.pdf](Documents/h753zi-nucleo/um2407-stm32h7-nucleo144-boards-mb1364-stmicroelectronics.pdf)
+- **MC33816 Development Kit User Guide**: [KIT33816FRDMUG.pdf](Documents/mc33816/KIT33816FRDMUG.pdf)
+- **MC33816 Datasheet**: [MC33816.pdf](Documents/mc33816/MC33816.pdf)
+
+### Hardware Connections
+
+The following table shows the pin connections between the NUCLEO-H753ZI board and the MC33816 evaluation kit (KIT33816FRDMUG):
+
+#### SPI Communication Interface
+
+| Signal      | NUCLEO-H753ZI Pin | MC33816 Kit Pin | Description                          |
+|-------------|-------------------|-----------------|--------------------------------------|
+| SPI_MOSI    | PA7 (SPI1_MOSI)   | MOSI            | SPI Master Out Slave In              |
+| SPI_MISO    | PA6 (SPI1_MISO)   | MISO            | SPI Master In Slave Out              |
+| SPI_SCK     | PA5 (SPI1_SCK)    | SCK             | SPI Clock (add 2k7 pull-down)        |
+| SPI_CS      | PD14              | CS              | SPI Chip Select (active low)         |
+
+#### Control and Status Signals
+
+| Signal      | NUCLEO-H753ZI Pin | MC33816 Kit Pin | Description                          |
+|-------------|-------------------|-----------------|--------------------------------------|
+| MC_RST      | PA4               | RESET           | MC33816 Reset (active low)           |
+| MC_DRV      | PB4               | DRV_EN          | Driver Enable                        |
+| MC_IRQ      | PE7               | IRQ             | Interrupt Request (falling edge)     |
+| MC_FLAG0    | PG14              | FLAG0           | Status Flag 0                        |
+| MC_FLAG1    | PF5               | FLAG1           | Status Flag 1                        |
+| MC_FLAG2    | PF4               | FLAG2           | Status Flag 2                        |
+| MC_FLAG3    | PG12              | FLAG3           | Status Flag 3                        |
+
+#### Timing and Debug Signals
+
+| Signal      | NUCLEO-H753ZI Pin | MC33816 Kit Pin | Description                          |
+|-------------|-------------------|-----------------|--------------------------------------|
+| MC_CLK      | PF6 (TIM16_CH1)   | CLK             | External Clock Input                 |
+| MC_DBG      | PE8               | DEBUG           | Debug Signal                         |
+
+#### Injector Start Signals (PWM Control)
+
+| Signal      | NUCLEO-H753ZI Pin | MC33816 Kit Pin | Description                          |
+|-------------|-------------------|-----------------|--------------------------------------|
+| MC_START1   | PB9               | START1          | Injector 1 Start Signal              |
+| MC_START2   | PB15              | START2          | Injector 2 Start Signal              |
+| MC_START3   | PC7               | START3          | Injector 3 Start Signal              |
+| MC_START4   | PB8               | START4          | Injector 4 Start Signal              |
+| MC_START5   | PB12              | START5          | Injector 5 Start Signal              |
+| MC_START6   | PC6               | START6          | Injector 6 Start Signal              |
+
+#### Power and Ground
+
+- Connect **GND** pins between NUCLEO-H753ZI and MC33816 kit
+- Ensure proper power supply to MC33816 kit (refer to KIT33816FRDMUG documentation)
+- MC33816 kit requires external power for high-current injector drivers
+
+**Note**: Verify all pin assignments match your hardware configuration by reviewing the .ioc file in STM32CubeMX before connecting hardware.
+
 ## Purpose
 
 - Provide a reference and starting project for developers integrating the MC33816 injector driver with STM32H7-based systems.
