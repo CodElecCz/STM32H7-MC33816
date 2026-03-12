@@ -10,6 +10,7 @@
 #include "mc33816_dram.h"
 #include "mc33816.h"
 #include "mc33816_spi_map.h"
+#include "mc33816_spi.h"
 
 void DRAM_Parameter_Read(uint8_t param_addr, uint16_t* value)
 {
