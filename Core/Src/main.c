@@ -949,6 +949,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   * @param  argument: Not used
   * @retval None
   */
+
+// 1ms at 50kHz = 50 samples
+#define BUFFER_SIZE 	5000
+uint16_t buffer[BUFFER_SIZE];
+
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
@@ -967,12 +972,28 @@ void StartDefaultTask(void *argument)
   lwiperf_init();
 #endif
 
+  osDelay(10);
+
+  ADC_TriggerCapture_t capture;
+  ADC_TriggerCapture_Init(&capture, 1, 2.5f, 1, 200, buffer, BUFFER_SIZE);
+  ADC_TriggerCapture_Arm(&capture);
+
   MC33816_init();
 
   /* Infinite loop */
   for(;;)
   {
 	MC33816_process();
+
+	ADC_TriggerCapture_Process(&capture);
+
+	// 5. Check result
+	if (ADC_TriggerCapture_GetState(&capture) == ADC_TRIGGER_COMPLETE)
+	{
+	    uint32_t samples = ADC_TriggerCapture_GetData(&capture);
+	    //MAIN_DEBUG_ERR(MC33816, ("Capture finished %d samples\n", samples));
+	}
+
 #if 0
 	float a1 = ADC_GetA1_Voltage();
 	MAIN_DEBUG_ERR(MC33816, ("ADC A1(%d.%03dV)\n", (int)a1, (int)((a1 - (int)a1)*1000)));
@@ -983,7 +1004,7 @@ void StartDefaultTask(void *argument)
 	//ADC_Stop();
 	//ADC_Start();
 #endif
-	osDelay(1);
+	osDelay(10);
   }
   /* USER CODE END 5 */
 }

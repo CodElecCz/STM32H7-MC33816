@@ -49,12 +49,12 @@ typedef struct {
     float threshold_voltage;    // Trigger threshold in volts
     uint8_t rising_edge;        // 1=rising edge, 0=falling edge
     uint32_t presample_count;   // Number of samples before trigger
-    uint32_t total_samples;     // Total samples to capture
     uint16_t* buffer;           // Pointer to capture buffer
-    uint32_t buffer_size;       // Size of capture buffer
+    uint32_t buffer_size;       // Size of capture buffer (= total samples to capture)
     ADC_TriggerState_t state;   // Current trigger state
     uint32_t trigger_index;     // Index where trigger occurred
     uint32_t samples_captured;  // Number of samples captured
+    uint32_t arm_dma_index;     // DMA position when armed (search starts from here)
 } ADC_TriggerCapture_t;
 
 /* Exported constants --------------------------------------------------------*/
@@ -79,7 +79,7 @@ float ADC_GetA2_Voltage(void);
 // Uses 32KB DMA buffer - call Process() once to search historical data for trigger
 void ADC_TriggerCapture_Init(ADC_TriggerCapture_t *capture, uint8_t channel, 
                               float threshold, uint8_t rising_edge,
-                              uint32_t presample_count, uint32_t total_samples,
+                              uint32_t presample_count,
                               uint16_t* buffer, uint32_t buffer_size);
 void ADC_TriggerCapture_Arm(ADC_TriggerCapture_t *capture);
 void ADC_TriggerCapture_Process(ADC_TriggerCapture_t *capture);  // Searches DMA buffer
