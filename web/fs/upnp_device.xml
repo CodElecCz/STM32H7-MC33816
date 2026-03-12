@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <URLBase>http://<!--#s_ip--></URLBase>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:<!--#s_dev--></deviceType>
+    <friendlyName><!--#s_idname--></friendlyName>
+    <presentationURL>http://<!--#s_ip--></presentationURL>
+    <manufacturer>Codelec</manufacturer>
+    <manufacturerURL>https://www.codelec.cz</manufacturerURL>
+    <modelDescription><!--#s_desc--></modelDescription>
+    <modelName><!--#s_dev--></modelName>
+    <modelNumber><!--#s_dev--> v<!--#s_fw--></modelNumber>
+    <modelURL>https://www.codelec.cz/</modelURL>
+    <serialNumber><!--#s_sn--></serialNumber>
+    <UDN>uuid:<!--#s_uuid--></UDN>
+  </device>
+</root>
