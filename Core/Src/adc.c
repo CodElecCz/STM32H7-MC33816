@@ -29,75 +29,22 @@
 
 /* Private variables ---------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
 extern TIM_HandleTypeDef htim2;  // Timer for ADC sampling
 
-// Place ADC buffer in D3 SRAM (0x38000000) for DMA access - uses entire 64K RAM_D3
-// STM32H7 DMA cannot access DTCM RAM directly
-// Buffer holds 32768 uint16_t values = 16384 dual-channel samples (A2, A1, A2, A1...)
-#if defined ( __ICCARM__ )
-#pragma location = 0x38000000
-static uint16_t adc_buffer[ADC_BUFFER_SIZE];
-#elif defined ( __CC_ARM )
-static uint16_t adc_buffer[ADC_BUFFER_SIZE] __attribute__((at(0x38000000)));
-#elif defined ( __GNUC__ )
-static uint16_t adc_buffer[ADC_BUFFER_SIZE] __attribute__((section(".dma_buffer")));
-#else
-static uint16_t adc_buffer[ADC_BUFFER_SIZE];
-#warning "ADC buffer location not explicitly set - DMA may not work"
-#endif
+// ADC buffers in D3 SRAM for DMA access (STM32H7 DMA cannot access DTCM)
+// Each buffer: 32768 samples = 64KB
+// ADC1: Channel 15 (PA3) - A1
+// ADC2: Channel 10 (PC0) - A2
+static uint16_t adc1_buffer[ADC_BUFFER_SIZE] __attribute__((section(".dma_buffer"), aligned(32)));
+static uint16_t adc2_buffer[ADC_BUFFER_SIZE] __attribute__((section(".dma_buffer"), aligned(32)));
 
 static ADC_Data_t adc_data = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 static void ADC_ConvertRawToVoltage(void);
-static uint32_t ADC_GetLastSampleIndex(uint8_t channel);
 
 /* Private functions ---------------------------------------------------------*/
-
-/**
-  * @brief  Get the index of the last complete sample in the circular buffer
-  * @param  channel: 1 for A1 (odd index), 2 for A2 (even index)
-  * @retval Buffer index of the last complete sample
-  */
-static uint32_t ADC_GetLastSampleIndex(uint8_t channel)
-{
-    uint32_t dma_index;
-    
-    // Get current DMA write position (remaining items to transfer)
-    uint32_t dma_remaining = __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
-    
-    // Calculate the last completed write position
-    // DMA counter counts down, so actual index is (BUFFER_SIZE - remaining)
-    dma_index = ADC_BUFFER_SIZE - dma_remaining;
-    
-    if (channel == 1)
-    {
-        // A1 is at odd index - move back 1 position to get last complete A1 sample
-        if (dma_index >= 1)
-        {
-            dma_index -= 1;
-        }
-        else
-        {
-            dma_index = ADC_BUFFER_SIZE - 1;
-        }
-    }
-    else
-    {
-        // A2 is at even index - move back 2 positions to get last complete A2 sample
-        if (dma_index >= 2)
-        {
-            dma_index -= 2;
-        }
-        else
-        {
-            // Wrap around to end of circular buffer
-            dma_index = ADC_BUFFER_SIZE - (2 - dma_index);
-        }
-    }
-    
-    return dma_index;
-}
 
 /**
   * @brief  Convert raw ADC values to voltages
@@ -116,13 +63,18 @@ static void ADC_ConvertRawToVoltage(void)
 
 /**
   * @brief  Initialize ADC for analog outputs
-  * @param  hadc: pointer to ADC_HandleTypeDef structure
   * @retval None
   */
 void ADC_Init(void)
 {
-    // Calibrate ADC
+    // Calibrate ADC1
     if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    
+    // Calibrate ADC2
+    if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
     {
         Error_Handler();
     }
@@ -134,13 +86,19 @@ void ADC_Init(void)
   */
 void ADC_Start(void)
 {
-    // Start ADC DMA conversion
-    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    // Start ADC1 DMA conversion (A1)
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc1_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    
+    // Start ADC2 DMA conversion (A2)
+    if (HAL_ADC_Start_DMA(&hadc2, (uint32_t*)adc2_buffer, ADC_BUFFER_SIZE) != HAL_OK)
     {
         Error_Handler();
     }
 
-    HAL_TIM_Base_Start(&htim2);  // Start TIM2 after ADC is ready
+    HAL_TIM_Base_Start(&htim2);  // Start TIM2 to trigger both ADCs
 }
 
 /**
@@ -149,8 +107,9 @@ void ADC_Start(void)
   */
 void ADC_Stop(void)
 {
-	HAL_TIM_Base_Stop(&htim2);  // Start TIM2 after ADC is ready
+    HAL_TIM_Base_Stop(&htim2);
     HAL_ADC_Stop_DMA(&hadc1);
+    HAL_ADC_Stop_DMA(&hadc2);
 }
 
 /**
@@ -160,22 +119,28 @@ void ADC_Stop(void)
   */
 void ADC_GetData(ADC_Data_t *data)
 {
-    uint32_t dma_index;
+    uint32_t adc1_index, adc2_index;
     
     if (data == NULL)
     {
         return;
     }
     
-    // Get index of last complete A2 sample (even index)
-    dma_index = ADC_GetLastSampleIndex(2);
+    // Get current DMA positions
+    adc1_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    adc2_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc2.DMA_Handle);
+    
+    // Get last complete sample (one position back from DMA pointer)
+    if (adc1_index > 0) adc1_index--; else adc1_index = ADC_BUFFER_SIZE - 1;
+    if (adc2_index > 0) adc2_index--; else adc2_index = ADC_BUFFER_SIZE - 1;
     
     // Invalidate D-Cache to ensure fresh data from DMA
-    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 64);
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc1_buffer[adc1_index], 32);
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc2_buffer[adc2_index], 32);
     
-    // Read last complete sample from buffer
-    adc_data.a2_raw = adc_buffer[dma_index];      // ADC_CHANNEL_10 (PC0/ADC1_INP10) - A2
-    adc_data.a1_raw = adc_buffer[dma_index + 1];  // ADC_CHANNEL_15 (PA3/ADC1_INP15) - A1
+    // Read samples
+    adc_data.a1_raw = adc1_buffer[adc1_index];
+    adc_data.a2_raw = adc2_buffer[adc2_index];
     
     // Convert to voltage
     ADC_ConvertRawToVoltage();
@@ -190,11 +155,12 @@ void ADC_GetData(ADC_Data_t *data)
   */
 uint16_t ADC_GetA1_Raw(void)
 {
-    uint32_t dma_index = ADC_GetLastSampleIndex(1);
+    uint32_t dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    if (dma_index > 0) dma_index--; else dma_index = ADC_BUFFER_SIZE - 1;
     
     // Invalidate D-Cache to get fresh data
-    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
-    return adc_buffer[dma_index];  // ADC_CHANNEL_15 (PA3/ADC1_INP15)
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc1_buffer[dma_index], 32);
+    return adc1_buffer[dma_index];
 }
 
 /**
@@ -203,11 +169,12 @@ uint16_t ADC_GetA1_Raw(void)
   */
 uint16_t ADC_GetA2_Raw(void)
 {
-    uint32_t dma_index = ADC_GetLastSampleIndex(2);
+    uint32_t dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc2.DMA_Handle);
+    if (dma_index > 0) dma_index--; else dma_index = ADC_BUFFER_SIZE - 1;
     
     // Invalidate D-Cache to get fresh data
-    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
-    return adc_buffer[dma_index];  // ADC_CHANNEL_10 (PC0/ADC1_INP10)
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc2_buffer[dma_index], 32);
+    return adc2_buffer[dma_index];
 }
 
 /**
@@ -216,11 +183,12 @@ uint16_t ADC_GetA2_Raw(void)
   */
 float ADC_GetA1_Voltage(void)
 {
-    uint32_t dma_index = ADC_GetLastSampleIndex(1);
+    uint32_t dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    if (dma_index > 0) dma_index--; else dma_index = ADC_BUFFER_SIZE - 1;
     
     // Invalidate D-Cache to get fresh data
-    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
-    adc_data.a1_raw = adc_buffer[dma_index];  // ADC_CHANNEL_15 (PA3/ADC1_INP15)
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc1_buffer[dma_index], 32);
+    adc_data.a1_raw = adc1_buffer[dma_index];
     adc_data.a1_voltage = ((float)adc_data.a1_raw / ADC_RESOLUTION) * ADC_VREF * ADC_VOLTAGE_DIVIDER;
     return adc_data.a1_voltage;
 }
@@ -231,11 +199,12 @@ float ADC_GetA1_Voltage(void)
   */
 float ADC_GetA2_Voltage(void)
 {
-    uint32_t dma_index = ADC_GetLastSampleIndex(2);
+    uint32_t dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc2.DMA_Handle);
+    if (dma_index > 0) dma_index--; else dma_index = ADC_BUFFER_SIZE - 1;
     
     // Invalidate D-Cache to get fresh data
-    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
-    adc_data.a2_raw = adc_buffer[dma_index];  // ADC_CHANNEL_10 (PC0/ADC1_INP10)
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc2_buffer[dma_index], 32);
+    adc_data.a2_raw = adc2_buffer[dma_index];
     adc_data.a2_voltage = ((float)adc_data.a2_raw / ADC_RESOLUTION) * ADC_VREF * ADC_VOLTAGE_DIVIDER;
     return adc_data.a2_voltage;
 }
@@ -325,10 +294,31 @@ void ADC_TriggerCapture_Arm(ADC_TriggerCapture_t *capture)
         return;
     }
     
-    // Store current DMA position - we'll only search data acquired after this point
-    capture->arm_dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    // Store current DMA position based on selected channel
+    if (capture->channel == 1)
+    {
+        capture->arm_dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    }
+    else
+    {
+        capture->arm_dma_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc2.DMA_Handle);
+    }
     
     capture->state = ADC_TRIGGER_ARMED;
+    capture->samples_captured = 0;
+    capture->trigger_index = 0;
+    capture->trigger_dma_index = 0;
+    capture->last_read_dma_index = 0;
+}
+
+void ADC_TriggerCapture_Idle(ADC_TriggerCapture_t *capture)
+{
+    if (capture == NULL)
+    {
+        return;
+    }
+
+    capture->state = ADC_TRIGGER_IDLE;
     capture->samples_captured = 0;
     capture->trigger_index = 0;
 }
@@ -344,198 +334,135 @@ void ADC_TriggerCapture_Arm(ADC_TriggerCapture_t *capture)
   */
 void ADC_TriggerCapture_Process(ADC_TriggerCapture_t *capture)
 {
+    uint32_t i;
     uint32_t dma_current_index;
-    uint32_t channel_offset;
-    uint32_t step;
-    static uint32_t trigger_dma_index = 0;  // Store trigger position in DMA buffer
-    
+    uint16_t *adc_buffer_ptr;
+    ADC_HandleTypeDef *hadc_ptr;
+
     if (capture == NULL || capture->state == ADC_TRIGGER_IDLE || capture->state == ADC_TRIGGER_COMPLETE)
     {
         return;
     }
-    
-    // Determine channel offset and step for interleaved dual-channel buffer
-    // Buffer format: [A2, A1, A2, A1, A2, A1, ...]
+
+    // Select correct buffer and ADC handle based on channel
     if (capture->channel == 1)
     {
-        channel_offset = 1;  // A1 at odd indices
+        adc_buffer_ptr = adc1_buffer;
+        hadc_ptr = &hadc1;
     }
     else
     {
-        channel_offset = 0;  // A2 at even indices
+        adc_buffer_ptr = adc2_buffer;
+        hadc_ptr = &hadc2;
     }
-    step = 2;  // Step by 2 to get only the selected channel
-    
+
     // Invalidate DMA buffer cache to ensure fresh data
-    SCB_InvalidateDCache_by_Addr((uint32_t*)adc_buffer, ADC_BUFFER_SIZE * sizeof(uint16_t));
-    
+    SCB_InvalidateDCache_by_Addr((uint32_t*)adc_buffer_ptr, ADC_BUFFER_SIZE * sizeof(uint16_t));
+
     // Get current DMA write position
-    dma_current_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
-    
+    dma_current_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc_ptr->DMA_Handle);
+
     if (capture->state == ADC_TRIGGER_ARMED)
     {
-        // PHASE 1: Search for trigger
-        uint32_t search_start_index;
-        uint32_t samples_to_search;
-        uint32_t i;
+        // PHASE 1: Search for trigger in data acquired after arm position
         uint16_t threshold_raw;
-        uint16_t current_value, previous_value;
-        uint8_t trigger_found = 0;
-        
-        // Convert threshold voltage to raw ADC value
+        int32_t dma_distance;
+        uint32_t samples_to_search;
+        uint8_t trigger_found;
+
         threshold_raw = (uint16_t)((capture->threshold_voltage / (ADC_VREF * ADC_VOLTAGE_DIVIDER)) * ADC_RESOLUTION);
-        
-        // Calculate how many samples to search from arm point to current position
-        int32_t dma_distance = (int32_t)dma_current_index - (int32_t)capture->arm_dma_index;
-        if (dma_distance < 0)
-        {
-            dma_distance += ADC_BUFFER_SIZE;  // Handle circular buffer wrap
-        }
-        samples_to_search = dma_distance / step;  // Convert to channel samples
-        
-        // Limit search range
+
+        // How many samples available since arm?
+        dma_distance = (int32_t)dma_current_index - (int32_t)capture->arm_dma_index;
+        if (dma_distance < 0) dma_distance += ADC_BUFFER_SIZE;
+
+        samples_to_search = (uint32_t)dma_distance;
         if (samples_to_search > capture->buffer_size + 1000)
-        {
             samples_to_search = capture->buffer_size + 1000;
-        }
-        
+
         if (samples_to_search < 2)
+            return;  // Not enough data yet
+
+        // Search FORWARDS from arm position to current DMA position
+        // This finds the OLDEST (first) trigger, maximising post-sample data available
+        trigger_found = 0;
+        for (i = 1; i < samples_to_search; i++)
         {
-            return;  // Not enough new data yet
-        }
-        
-        // Start searching backwards from current DMA position to arm position
-        search_start_index = dma_current_index;
-        if (search_start_index % 2 != channel_offset)
-        {
-            search_start_index = (search_start_index + 1) % ADC_BUFFER_SIZE;
-        }
-        
-        // Search backwards through the buffer for trigger condition
-        // Only search data acquired AFTER arming
-        for (i = 0; i < samples_to_search - 1; i++)
-        {
-            uint32_t current_idx = (search_start_index - (i * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
-            uint32_t previous_idx = (current_idx - step + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
-            
-            // Stop searching if we've reached the arm position (don't search older data)
-            int32_t distance_to_arm = (int32_t)current_idx - (int32_t)capture->arm_dma_index;
-            if (distance_to_arm < 0)
-            {
-                distance_to_arm += ADC_BUFFER_SIZE;
-            }
-            if (distance_to_arm < step)
-            {
-                break;  // Reached arm position, stop
-            }
-            
-            current_value = adc_buffer[current_idx];
-            previous_value = adc_buffer[previous_idx];
-            
-            // Check for trigger condition
+            uint32_t prev_idx = (capture->arm_dma_index + i - 1) % ADC_BUFFER_SIZE;
+            uint32_t curr_idx = (capture->arm_dma_index + i    ) % ADC_BUFFER_SIZE;
+
+            uint16_t prev_val = adc_buffer_ptr[prev_idx];
+            uint16_t curr_val = adc_buffer_ptr[curr_idx];
+
             if (capture->rising_edge)
             {
-                if (previous_value < threshold_raw && current_value >= threshold_raw)
+                if (prev_val < threshold_raw && curr_val >= threshold_raw)
                 {
                     trigger_found = 1;
-                    trigger_dma_index = current_idx;
+                    capture->trigger_dma_index = curr_idx;
                     break;
                 }
             }
             else
             {
-                if (previous_value >= threshold_raw && current_value < threshold_raw)
+                if (prev_val >= threshold_raw && curr_val < threshold_raw)
                 {
                     trigger_found = 1;
-                    trigger_dma_index = current_idx;
+                    capture->trigger_dma_index = curr_idx;
                     break;
                 }
             }
         }
-        
+
         if (!trigger_found)
+            return;
+
+        // Copy pre-samples (go backwards from trigger into history)
+        for (i = 0; i < capture->presample_count; i++)
         {
-            return;  // No trigger found yet, keep waiting
+            // buffer[0] = oldest pre-sample, buffer[presample_count-1] = newest pre-sample
+            int32_t offset = (int32_t)i - (int32_t)capture->presample_count;
+            int32_t src = (int32_t)capture->trigger_dma_index + offset;
+            if (src < 0) src += ADC_BUFFER_SIZE;
+            capture->buffer[i] = adc_buffer_ptr[(uint32_t)src % ADC_BUFFER_SIZE];
         }
-        
-        // Trigger found! Capture pre-samples
-        uint32_t actual_presamples = capture->presample_count;
-        
-        for (i = 0; i < actual_presamples && i < capture->buffer_size; i++)
-        {
-            int32_t offset_from_trigger = (int32_t)i - (int32_t)actual_presamples;
-            uint32_t src_idx = (trigger_dma_index + (offset_from_trigger * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
-            capture->buffer[i] = adc_buffer[src_idx];
-        }
-        
-        capture->samples_captured = actual_presamples;
-        capture->trigger_index = actual_presamples;
+
+        // Copy trigger sample itself
+        capture->buffer[capture->presample_count] = adc_buffer_ptr[capture->trigger_dma_index];
+        capture->trigger_index = capture->presample_count;
+        capture->samples_captured = capture->presample_count + 1;
+
+        // Post-samples exist in DMA buffer right after trigger_dma_index.
+        // last_read_dma_index = trigger sample position, TRIGGERED phase reads from +1 onwards.
+        capture->last_read_dma_index = capture->trigger_dma_index;
         capture->state = ADC_TRIGGER_TRIGGERED;
     }
     else if (capture->state == ADC_TRIGGER_TRIGGERED)
     {
-        // PHASE 2: Continue capturing post-trigger samples
-        uint32_t i;
-        
-        // Calculate how many more samples we need
-        uint32_t remaining = capture->buffer_size - capture->samples_captured;
-        
-        // Calculate how many post-samples have been acquired in DMA buffer since trigger
-        // Need to check if enough new samples are available
-        int32_t samples_since_trigger;
-        
-        // Calculate distance from trigger to current DMA position (in channel samples)
-        int32_t dma_distance = (int32_t)dma_current_index - (int32_t)trigger_dma_index;
-        if (dma_distance < 0)
-        {
-            dma_distance += ADC_BUFFER_SIZE;  // Wrap around circular buffer
-        }
-        samples_since_trigger = dma_distance / step;  // Convert to channel samples
-        
-        // Check if we have enough post-samples available
-        uint32_t post_samples_needed = remaining;
-        uint32_t post_samples_available = (samples_since_trigger > 0) ? samples_since_trigger : 0;
-        
-        if (post_samples_available < post_samples_needed)
-        {
-            // Not enough data yet - wait for more samples
-            // Only copy what's available so far
-            uint32_t samples_to_copy = post_samples_available;
-            
-            for (i = 0; i < samples_to_copy; i++)
-            {
-                uint32_t buffer_idx = capture->samples_captured + i;
-                
-                // Calculate position in DMA buffer relative to trigger
-                int32_t offset_from_trigger = (int32_t)buffer_idx - (int32_t)capture->trigger_index;
-                uint32_t src_idx = (trigger_dma_index + (offset_from_trigger * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
-                
-                capture->buffer[buffer_idx] = adc_buffer[src_idx];
-            }
-            
-            capture->samples_captured += samples_to_copy;
-            // Stay in TRIGGERED state - not complete yet
+        // PHASE 2: Copy post-samples sequentially, never ahead of DMA write position.
+        uint32_t remaining;
+        uint32_t new_data;
+        uint32_t to_copy;
+
+        remaining = capture->buffer_size - capture->samples_captured;
+        new_data  = (dma_current_index - capture->last_read_dma_index + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
+
+        if (new_data == 0)
             return;
-        }
-        
-        // Enough data available - copy all remaining samples
-        for (i = 0; i < remaining; i++)
+
+        to_copy = (new_data < remaining) ? new_data : remaining;
+
+        for (i = 0; i < to_copy; i++)
         {
-            uint32_t buffer_idx = capture->samples_captured + i;
-            if (buffer_idx >= capture->buffer_size)
-            {
-                break;  // Buffer full
-            }
-            
-            // Calculate position in DMA buffer relative to trigger
-            int32_t offset_from_trigger = (int32_t)buffer_idx - (int32_t)capture->trigger_index;
-            uint32_t src_idx = (trigger_dma_index + (offset_from_trigger * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
-            
-            capture->buffer[buffer_idx] = adc_buffer[src_idx];
+            uint32_t src_idx = (capture->last_read_dma_index + 1 + i) % ADC_BUFFER_SIZE;
+            capture->buffer[capture->samples_captured + i] = adc_buffer_ptr[src_idx];
         }
-        
-        capture->samples_captured = capture->buffer_size;
-        capture->state = ADC_TRIGGER_COMPLETE;
+
+        capture->samples_captured   += to_copy;
+        capture->last_read_dma_index = (capture->last_read_dma_index + to_copy) % ADC_BUFFER_SIZE;
+
+        if (capture->samples_captured >= capture->buffer_size)
+            capture->state = ADC_TRIGGER_COMPLETE;
     }
 }
 

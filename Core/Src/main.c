@@ -50,7 +50,9 @@
 
 COM_InitTypeDef BspCOMInit;
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
 DMA_HandleTypeDef hdma_adc1;
+DMA_HandleTypeDef hdma_adc2;
 
 CRC_HandleTypeDef hcrc;
 
@@ -91,6 +93,7 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
@@ -105,6 +108,7 @@ static void MX_ADC1_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_ADC2_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -150,6 +154,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -168,9 +175,11 @@ int main(void)
   MX_RTC_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
+  MX_ADC2_Init();
   /* Call PreOsInit function */
   MX_MBEDTLS_Init();
   /* USER CODE BEGIN 2 */
+
   DWT_Init();
   ADC_Init();
   ADC_Start();
@@ -310,6 +319,32 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInitStruct.PLL2.PLL2M = 1;
+  PeriphClkInitStruct.PLL2.PLL2N = 30;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
   * @brief ADC1 Initialization Function
   * @param None
   * @retval None
@@ -333,11 +368,11 @@ static void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T2_TRGO;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
@@ -361,9 +396,9 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Channel = ADC_CHANNEL_15;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_64CYCLES_5; //ADC_SAMPLETIME_8CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -372,18 +407,69 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_15;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+
+  /** Common config
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc2.Init.Resolution = ADC_RESOLUTION_16B;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc2.Init.LowPowerAutoWait = DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T2_TRGO;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc2.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
+  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc2.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadc2.Init.OversamplingMode = DISABLE;
+  hadc2.Init.Oversampling.Ratio = 1;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  sConfig.OffsetSignedSaturation = DISABLE;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
 
 }
 
@@ -821,9 +907,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
-  /* DMAMUX1_OVR_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMAMUX1_OVR_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
 }
 
@@ -950,8 +1036,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   * @retval None
   */
 
-// 1ms at 50kHz = 50 samples
-#define BUFFER_SIZE 	5000
+// 1ms at 100kHz = 100 samples
+#define BUFFER_SIZE 	2000
 uint16_t buffer[BUFFER_SIZE];
 
 /* USER CODE END Header_StartDefaultTask */
@@ -987,23 +1073,16 @@ void StartDefaultTask(void *argument)
 
 	ADC_TriggerCapture_Process(&capture);
 
-	// 5. Check result
 	if (ADC_TriggerCapture_GetState(&capture) == ADC_TRIGGER_COMPLETE)
 	{
-	    uint32_t samples = ADC_TriggerCapture_GetData(&capture);
-	    //MAIN_DEBUG_ERR(MC33816, ("Capture finished %d samples\n", samples));
+		uint32_t samples = ADC_TriggerCapture_GetData(&capture);
+		MAIN_DEBUG_TRACE(ADC, ("Capture COMPLETE! %lu samples, trigger at index %lu\n",
+			samples, capture.trigger_index));
+
+		ADC_TriggerCapture_Idle(&capture);
+		ADC_TriggerCapture_Arm(&capture);
 	}
 
-#if 0
-	float a1 = ADC_GetA1_Voltage();
-	MAIN_DEBUG_ERR(MC33816, ("ADC A1(%d.%03dV)\n", (int)a1, (int)((a1 - (int)a1)*1000)));
-
-	float a2 = ADC_GetA2_Voltage();
-	MAIN_DEBUG_ERR(MC33816, ("ADC A2(%d.%03dV)\n", (int)a2, (int)((a2 - (int)a2)*1000)));
-
-	//ADC_Stop();
-	//ADC_Start();
-#endif
 	osDelay(10);
   }
   /* USER CODE END 5 */
@@ -1062,6 +1141,22 @@ void MPU_Config(void)
 	MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+
+	HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+	/* Configure the MPU attributes as Normal Non Cacheable
+	   for ADC DMA buffers in RAM_D3 (adc1_buffer, adc2_buffer @ 0x38000000) */
+	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+	MPU_InitStruct.BaseAddress = 0x38000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
+	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+	MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+	MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+	MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+	MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+	MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+	MPU_InitStruct.SubRegionDisable = 0x00;
+	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
 

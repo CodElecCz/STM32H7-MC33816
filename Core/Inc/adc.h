@@ -55,10 +55,12 @@ typedef struct {
     uint32_t trigger_index;     // Index where trigger occurred
     uint32_t samples_captured;  // Number of samples captured
     uint32_t arm_dma_index;     // DMA position when armed (search starts from here)
+    uint32_t trigger_dma_index; // DMA position where trigger was found
+    uint32_t last_read_dma_index; // Last DMA position copied to buffer
 } ADC_TriggerCapture_t;
 
 /* Exported constants --------------------------------------------------------*/
-#define ADC_BUFFER_SIZE         32768       // RAM_D3 is 64K = 32768 uint16_t values (16384 dual samples)
+#define ADC_BUFFER_SIZE         16384       // RAM_D3 is 64K = 32768 uint16_t values (16384 dual samples)
 #define ADC_VREF                3.3f        // ADC reference voltage (V)
 #define ADC_RESOLUTION          65536.0f    // 16-bit ADC resolution
 #define ADC_VOLTAGE_DIVIDER     1.667f      // Voltage divider ratio (5V to 3V)
@@ -83,6 +85,7 @@ void ADC_TriggerCapture_Init(ADC_TriggerCapture_t *capture, uint8_t channel,
                               uint16_t* buffer, uint32_t buffer_size);
 void ADC_TriggerCapture_Arm(ADC_TriggerCapture_t *capture);
 void ADC_TriggerCapture_Process(ADC_TriggerCapture_t *capture);  // Searches DMA buffer
+void ADC_TriggerCapture_Idle(ADC_TriggerCapture_t *capture);
 ADC_TriggerState_t ADC_TriggerCapture_GetState(ADC_TriggerCapture_t *capture);
 uint32_t ADC_TriggerCapture_GetData(ADC_TriggerCapture_t *capture);
 
