@@ -210,12 +210,7 @@
 #define selection_register               0x3FF
 
 #define COMMON_PAGE                      0x04
-#define IDENTIFER_REVISION               0x9C43
-#define IDENTIFER_REVISION1              0x9CB4  // C3-Si
-#define IDENTIFER_REVISION2              0x9CC4  // C4-Si
-#define IDENTIFER_REVISION3              0x9CD4
-#define IDENTIFER_REVISION4              0x9DC4
-#define IDENTIFER_REVISION5              0x9DD4
+#define IDENTIFER_REVISION               0x9D43
 #define BIST_PASSWORD                    0xB157
 #define DEVICE_UNLOCK_PASSWORD           0x1337
 #define BOOTSTRP_CHARGE                  0x1F

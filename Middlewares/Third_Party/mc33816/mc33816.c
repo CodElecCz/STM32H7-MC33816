@@ -38,6 +38,8 @@
 *******************************************************************************/
 
 #include <stddef.h>
+#include <stdio.h>
+
 #include "mc33816_system.h"
 #include "mc33816.h"
 #include "mc33816_spi_map.h"
@@ -45,6 +47,16 @@
 #include "mc33816_spi.h"
 
 const int MAX_SPI_MODE_A_TRANSFER_SIZE = 31;  // max size for register config transfer
+
+static void MC33816_HexDump(const uint8_t* data, size_t size)
+{
+	MAIN_DEBUG_TRACE(MC33816, ("MC33816:"));
+	for (size_t i = 0; i < size; i++)
+	{
+		MAIN_DEBUG_TRACE(MC33816, (" %02X", data[i]));
+	}
+	MAIN_DEBUG_TRACE(MC33816, ("\n"));
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function name   : send_SPI_Cmd
@@ -59,6 +71,8 @@ const int MAX_SPI_MODE_A_TRANSFER_SIZE = 31;  // max size for register config tr
 bool send_SPI_Cmd(bool bRead, uint16_t offset, uint16_t length, uint16_t* pTxData, uint16_t* pRxData)
 {
     int i = 0;
+    bool pass = false;
+    uint16_t rxData = 0;
     uint16_t command = 0;
 
     // Return false if the length is out of range
@@ -81,15 +95,39 @@ bool send_SPI_Cmd(bool bRead, uint16_t offset, uint16_t length, uint16_t* pTxDat
     command |= length;
 
     // Send the command word
-    send_16bit_SPI(command);
+    pass = send_16bit_SPI(command, &rxData);
+
+    // Trace: Control word - R/W, Address, Size
+	MAIN_DEBUG_TRACE(MC33816, ("MC33816 [%s] Addr=0x%03X Size=%d Cmd=0x%04X Rx:%04X\n",
+								bRead ? "READ" : "WRITE", offset, length, command, rxData));
+
+    // Trace: TX data on one line
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 [TX]"));
+    for (i = 0; i < length; i++)
+    {
+        MAIN_DEBUG_TRACE(MC33816, (" %04X", pTxData[i]));
+    }
+    MAIN_DEBUG_TRACE(MC33816, ("\n"));
 
     // Send the data word(s)
     for (i = 0; i < length; i++)
     {
-        *(pRxData++) = send_16bit_SPI(*(pTxData++));
+        uint16_t txData = *pTxData;
+        pass = send_16bit_SPI(txData, &rxData);
+        *pRxData = rxData;
+        pTxData++;
+        pRxData++;
     }
 
-    return true;
+    // Trace: RX data on one line
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 [RX]"));
+    for (i = 0; i < length; i++)
+    {
+        MAIN_DEBUG_TRACE(MC33816, (" %04X", (pRxData - length)[i]));
+    }
+    MAIN_DEBUG_TRACE(MC33816, ("\n"));
+
+    return pass;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,6 +141,7 @@ bool send_SPI_Cmd(bool bRead, uint16_t offset, uint16_t length, uint16_t* pTxDat
 uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData)
 {
     const uint16_t length = 1;
+    bool pass = false;
     uint16_t rxData = 0;
     uint16_t command = 0;
 
@@ -120,10 +159,16 @@ uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData)
     command |= length;
 
     // Send the command word
-    send_16bit_SPI(command);
+    pass = send_16bit_SPI(command, &rxData);
 
+    // Trace: Control word - R/W, Address, Size
+	MAIN_DEBUG_TRACE(MC33816, ("MC33816 [%s] Addr=0x%03X Size=%d Cmd=0x%04X Rx:%04X\n",
+								bRead ? "READ" : "WRITE", offset, length, command, rxData));
+    
     // Send the data word
-    rxData = send_16bit_SPI(txData);
+    pass = send_16bit_SPI(txData, &rxData);
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 [DATA] Tx:%04X Rx:%04X\n", txData, rxData));
 
     return rxData;
 }
@@ -135,21 +180,37 @@ uint16_t send_single_SPI_Cmd(bool bRead, uint16_t offset, uint16_t txData)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ProgramDevice()
 {
-    uint16_t rxdata = 0;
+	uint16_t rxData = 0;
 
+	MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[MAIN_REG]\n"));
     download_register(MAIN_REG);    // download main register configurations
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[CODE_RAM1]\n"));
     download_RAM(CODE_RAM1);        // transfers code RAM1
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[CODE_RAM2]\n"));
     download_RAM(CODE_RAM2);        // transfers code RAM2
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[DATA_RAM]\n"));
     download_RAM(DATA_RAM);         // transfers data RAM
 
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[IO_REG]\n"));
     download_register(IO_REG);      // download IO register configurations
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[DIAG_REG]\n"));
     download_register(DIAG_REG);    // download diag register configurations
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[CH1_REG]\n"));
     download_register(CH1_REG);     // download channel 1 register configurations
+
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Program[CH2_REG]\n"));
     download_register(CH2_REG);     // download channel 2 register configurations
 
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Flash Enable [CH1]\n"));
+    rxData = send_single_SPI_Cmd(WRITE, ch1_flash_enable, 0x001A);  // enable flash and dual sequence ch1 (address = 0x100)
 
-    rxdata = send_single_SPI_Cmd(WRITE, ch1_flash_enable, 0x001A);  // enable flash and dual sequence ch1 (address = 0x100)
-    rxdata = send_single_SPI_Cmd(WRITE, ch2_flash_enable, 0x001A);  // enable flash and dual sequence ch2 (address = 0x120)
+    MAIN_DEBUG_TRACE(MC33816, ("MC33816 Flash Enable [CH2]\n"));
+    rxData = send_single_SPI_Cmd(WRITE, ch2_flash_enable, 0x001A);  // enable flash and dual sequence ch2 (address = 0x120)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,15 +226,16 @@ void download_RAM(int target)
     unsigned short codeWidthRegAddr = 0;   // code width register address
     unsigned short size = 0;               // size of RAM data
     unsigned short command = 0;            // command data
+    uint16_t rxData = 0;
     unsigned short data = 0;               // RAM data
     unsigned int k = 0;                    // used in loop for writing RAM data to the chip
     unsigned short *RAM_ptr = NULL;        // pointer to array of data to be sent to the chip
 
     // Select common page memory area
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);
 
     // Set the maximum watchdog timeout
-    send_single_SPI_Cmd(WRITE, main_SPI_config, 0x1F);
+    rxData = send_single_SPI_Cmd(WRITE, main_SPI_config, 0x1F);
 
     // Select target
     switch (target)
@@ -209,19 +271,19 @@ void download_RAM(int target)
     if (target != DATA_RAM)
     {
         // Set the code width register with the size of the download
-        send_single_SPI_Cmd(WRITE, codeWidthRegAddr, size);
+    	rxData = send_single_SPI_Cmd(WRITE, codeWidthRegAddr, size);
     }
 
     // Send command for memory area selection
-    send_single_SPI_Cmd(WRITE, selection_register, memory_area);
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, memory_area);
 
     command = start_address << 5;
-    send_16bit_SPI(command);              // sends start address command
+    send_16bit_SPI(command, &rxData);              // sends start address command
 
     for (k = 0; k < size; k++)            // downloads RAM
     {
         data = *RAM_ptr;                  // retrieves data to be sent
-        send_16bit_SPI(data);             // sends data
+        send_16bit_SPI(data, &rxData);             // sends data
         RAM_ptr++;
     }
 } //end download_RAM
@@ -241,6 +303,7 @@ void download_register(int r_target)
     int n = 0;                           // used for loop for writing data to the chip
     unsigned short remainder_size = 0;   // remainder size
     unsigned short *reg_ptr = NULL;      // pointer to array of data to be sent to the chip
+    uint16_t rxData = 0;
 
     switch (r_target)                    // selects target
     {
@@ -279,10 +342,10 @@ void download_register(int r_target)
     }
 
     // Select common page memory area
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);
 
     // Set the maximum watchdog timeout
-    send_single_SPI_Cmd(WRITE, main_SPI_config, 0x1F);
+    rxData = send_single_SPI_Cmd(WRITE, main_SPI_config, 0x1F);
 
     do
     {
@@ -306,13 +369,18 @@ void download_register(int r_target)
         r_command += r_size;
 
         // Write a control word indicating the address and the number of words to be sent
-        send_16bit_SPI(r_command);
+        send_16bit_SPI(r_command, &rxData);
+
+        MAIN_DEBUG_TRACE(MC33816, ("MC33816 [%s] Addr=0x%03X Size=%d Cmd=0x%04X Rx:%04X\n",
+        								"WRITE", r_start_address, r_size, r_command, rxData));
 
         for (n = 0; n < r_size; n++)
         {
             r_data = *reg_ptr;             // set data to be sent
-            send_16bit_SPI(r_data);        // send data
+            send_16bit_SPI(r_data, &rxData);        // send data
             reg_ptr++;                     // update data pointer
+
+            MAIN_DEBUG_TRACE(MC33816, ("MC33816 [DATA] Tx:%04X Rx:%04X\n", r_data, rxData));
         }
 
         r_start_address += r_size;         // update the start address
@@ -328,11 +396,12 @@ void download_register(int r_target)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CLK_check()
 {
+	uint16_t rxData = 0;
     uint16_t cksys_missing;
     bool CLK_results = true;
 
     // Check CLK 1MHz
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
     cksys_missing = send_single_SPI_Cmd(READ, main_Backup_Clock_Status, 0x00); // Read backup_clock_status 1A8h
 
     if ((cksys_missing & 0x1) != 0) { CLK_results = false; } // If 1MHz CLK not there set results to 0
@@ -351,8 +420,8 @@ bool Driver_Status_Init ()
     bool Driver_Status_results;
 
     Driver_Status_results = 1;
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
-    send_single_SPI_Cmd(READ, main_Driver_Status, 0); // Read driver status register
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
+    rxData = send_single_SPI_Cmd(READ, main_Driver_Status, 0); // Read driver status register
     rxData = send_single_SPI_Cmd(READ, main_Driver_Status, 0); // Read driver status second time to past faults
 
     if  ( (rxData & 0x4F) != 0)   { Driver_Status_results = 0; } // Error if different than 0
@@ -373,7 +442,7 @@ bool DRVEN_check()
     uint16_t rxData = 0;
 
     SET_DRVEN_LOW;
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
 
     // Check if DRVEN monitoring works using SPI register 1B2h
     rxData = send_single_SPI_Cmd(READ, main_Driver_Status, 0x00);
@@ -408,11 +477,11 @@ bool BIST_check(_Bool BIST_run)
     if(BIST_run ==1)
     {
         // Run BIST
-        rxData = 1;
-        send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
-        send_single_SPI_Cmd(WRITE, main_BIST_interface, BIST_PASSWORD);
+        rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
+        rxData = send_single_SPI_Cmd(WRITE, main_BIST_interface, BIST_PASSWORD);
         delay100us(40); // wait 4 ms until MBIST complete
 
+        rxData = 1;
         while (rxData == 0x1)
         {
             rxData = send_single_SPI_Cmd(READ, main_BIST_interface, 0);
@@ -439,26 +508,26 @@ bool BIST_check(_Bool BIST_run)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool OA_path_check(_Bool OA1_check, _Bool OA2_check)
 {
+	uint16_t rxData = 0;
     bool OA_results=0;
     int OA_value=0;
     bool OA1_test=1;
     bool OA2_test=1;
 
-
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
     
     // Check OA connection to MCU using internal 2.5V
 
     if(OA1_check == 1)  // OA1
     {
-        send_single_SPI_Cmd(WRITE, io_oa_out1_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
+    	rxData = send_single_SPI_Cmd(WRITE, io_oa_out1_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
         OA_value = read_ADC(1);
         if ( OA_value > 0xF5) OA1_test = 1;        // No fault F5x19.6mV = 4.8V on OA meaning VCC2P5 > 2.4V (gain of 2)
         else OA1_test =0;
     }
     if(OA2_check == 1)  // OA2
     {
-        send_single_SPI_Cmd(WRITE, io_oa_out2_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
+    	rxData = send_single_SPI_Cmd(WRITE, io_oa_out2_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
         OA_value = read_ADC1(2);
         if ( OA_value > 0xF5) OA2_test = 1;
         else OA2_test =0;
@@ -478,7 +547,7 @@ bool Checksum_check()
     uint16_t rxData = 0;
     bool Checksum_results = true;
 
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Select common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Select common page
 
     // Checksum test
     // Channel 1
@@ -502,15 +571,17 @@ bool Checksum_check()
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Device_Lock_Unlock (unsigned char Lock_Unlock)
 {
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Select common page
+	uint16_t rxData = 0;
+
+	rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Select common page
 
     if (Lock_Unlock ==1) // Lock device
     {
-        send_single_SPI_Cmd(WRITE, main_Device_lock, 0x01);  // Just SPI is locked not the DRAM private
+    	rxData = send_single_SPI_Cmd(WRITE, main_Device_lock, 0x01);  // Just SPI is locked not the DRAM private
     }
     else   // unlock device
     {
-        send_single_SPI_Cmd(WRITE, main_Device_unlock, DEVICE_UNLOCK_PASSWORD); // Unlock device
+    	rxData = send_single_SPI_Cmd(WRITE, main_Device_unlock, DEVICE_UNLOCK_PASSWORD); // Unlock device
     }
 }
 
@@ -525,17 +596,14 @@ bool ID_Check ()
     bool ID_results = true;
 
     // Check if SPI works and that device is the good one
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);       // Set common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);       // Set common page
     rxData = send_single_SPI_Cmd(READ, main_Device_Identifier, 0x00);  // Read back device ID (value will be in rxData)
 
     // If device ID is wrong, return 0
-    if ((rxData != IDENTIFER_REVISION) &&
-        (rxData != IDENTIFER_REVISION1) &&
-        (rxData != IDENTIFER_REVISION2) &&
-        (rxData != IDENTIFER_REVISION3) &&
-        (rxData != IDENTIFER_REVISION4) &&
-        (rxData != IDENTIFER_REVISION5))
-        { ID_results = false; }
+    if (rxData != IDENTIFER_REVISION)
+    {
+    	ID_results = false;
+    }
 
     return ID_results;
 }
@@ -551,7 +619,7 @@ unsigned long Bootstrap_check ()
     uint16_t rxData = 0;
     unsigned long Bootstrap_results = 1;
 
-    send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Set common page
+    rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE);  // Set common page
     rxData = send_single_SPI_Cmd(READ, io_bootstrap_charged, 0x00);
 
     if((rxData & BOOTSTRP_CHARGE) != 0)
@@ -581,13 +649,14 @@ unsigned long Bootstrap_check ()
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Tracer (unsigned int trace_start, unsigned int trace_stop, _Bool ucore, unsigned char channel , unsigned char post_trigger_length, _Bool trace_enable)
 {
+	uint16_t rxData = 0;
     uint16_t uc_select;
     uint16_t trace_config;
 
-    send_single_SPI_Cmd(WRITE, main_Trace_start, trace_start);  // Set trace start
-    send_single_SPI_Cmd(WRITE, main_Trace_stop, trace_stop);    // Set trace stop
+    rxData = send_single_SPI_Cmd(WRITE, main_Trace_start, trace_start);  // Set trace start
+    rxData = send_single_SPI_Cmd(WRITE, main_Trace_stop, trace_stop);    // Set trace stop
     uc_select = ((channel-1) << 1) + ucore;  // 000 uc0 channel1, 001 uc1 ch1, 100 uc0 ch3...
     trace_config = post_trigger_length + (uc_select << 8) + (trace_enable << 15);
-    send_single_SPI_Cmd(WRITE, main_Trace_config, trace_config);  // Set trace config
+    rxData = send_single_SPI_Cmd(WRITE, main_Trace_config, trace_config);  // Set trace config
 }
 

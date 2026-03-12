@@ -53,7 +53,7 @@
 #define WRITE 		false
 
 void init_SPI(void);
-unsigned short send_16bit_SPI(unsigned short data16);
+bool send_16bit_SPI(unsigned short txData, unsigned short* rxData);
 
 
 #endif /* LPSPI_H_ */

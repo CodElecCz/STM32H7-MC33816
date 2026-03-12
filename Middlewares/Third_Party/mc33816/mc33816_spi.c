@@ -45,15 +45,19 @@
  */
 
 #include <stddef.h>
+
 #include "mc33816_spi.h"
+#include "main.h"
+
+extern SPI_HandleTypeDef hspi1;
 
 // SPI transfer constants
-const unsigned short TIMEOUT = 1000;
+const unsigned short TIMEOUT = 100U;  // timeout for SPI transfer in ms
 const size_t transferByteCount = 2U;
 
 // SPI transmit and receive buffers
-unsigned char masterDataSend[2];
-unsigned char masterDataReceive[2];
+unsigned char masterDataSend[2] = {0};
+unsigned char masterDataReceive[2] = {0};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,19 +74,22 @@ void init_SPI(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function name   : send_16bit_SPI
 // Description     : Sends a 16 bit SPI word to the device
-// Return type     : uint16_t - Data received from the device
+// Return type     : bool - true = send was successful, false = send failed
 // Argument        : unsigned short data16 - Data to send to the device
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-unsigned short send_16bit_SPI(unsigned short data16)
+bool send_16bit_SPI(unsigned short txData, unsigned short* rxData)
 {
-    unsigned short rxData = 0;
+	HAL_StatusTypeDef ret = HAL_OK;
 
-    // Send data from master
-    masterDataSend[0] = data16 & 0xFF;
-    masterDataSend[1] = (data16 >> 8) & 0xFF;
+   // Send data from master
+	masterDataSend[0] = (txData >> 8) & 0xFF;
+    masterDataSend[1] = txData & 0xFF;
 
     // Add code to send a SPI word
+    HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+	ret = HAL_SPI_TransmitReceive(&hspi1, masterDataSend, masterDataReceive, 2, TIMEOUT);
+	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
 
-    rxData = ((masterDataReceive[1] << 8) & 0xFF00) | masterDataReceive[0];
-    return rxData;
+    if(rxData) *rxData = ((masterDataReceive[0] << 8) & 0xFF00) | masterDataReceive[1];
+    return (ret == HAL_OK); // Return true if SPI transfer was successful, false if it failed
 }

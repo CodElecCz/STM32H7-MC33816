@@ -99,18 +99,50 @@ int MC33816_init(void)
     SET_RESETB_HIGH;
     delay100us(1);                                 // Wait for the PLL time to lock
 
-    if (ID_Check () == 0) { return -1; };          // Check if SPI works and that device is the good one
-    if (CLK_check() == 0) { return -1; };          // Check if 1MHz CLK is properly connected
-    if (DRVEN_check() == 0) { return -1; };        // Check if DRVEN monitoring works using SPI register 1B2h
-    if (BIST_check(1) == 0) { return -1; };        // Run BIST
-    if (OA_path_check(1,1) == 0) { return -1; };   // Check OA pin connections to MCU ADC
+    if (ID_Check () == 0) 		// Check if SPI works and that device is the good one
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 ID_Check() failed\n"));
+    	return -1;
+    };
+    if (CLK_check() == 0) 		// Check if 1MHz CLK is properly connected
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 CLK_check() failed\n"));
+    	return -1;
+    };
+    if (DRVEN_check() == 0) 	// Check if DRVEN monitoring works using SPI register 1B2h
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 DRVEN_check() failed\n"));
+    	return -1;
+    };
+    if (BIST_check(1) == 0) 	// Run BIST
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 BIST_check() failed\n"));
+    	return -1;
+    };
+    if (OA_path_check(1,1) == 0) 	// Check OA pin connections to MCU ADC
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 OA_path_check() failed\n"));
+    	//return -1;
+    };
 
     // Program the device
     ProgramDevice();
 
-    if (Checksum_check() == 0) { return -1; };     // Checksum pass or fail
-    if (Driver_Status_Init() == 0) { return -1; }; // Check if all regulators are at ON
-    if (Bootstrap_check() == 0) { return -1; };    // Check if bootstrap caps are charged (should be done after 35ms)
+    if (Checksum_check() == 0) 	// Checksum pass or fail
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 Checksum_check() failed\n"));
+    	return -1;
+    };
+    if (Driver_Status_Init() == 0) // Check if all regulators are at ON
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 Driver_Status_Init() failed\n"));
+    	return -1;
+    };
+    if (Bootstrap_check() == 0) // Check if bootstrap caps are charged (should be done after 35ms)
+    {
+    	MAIN_DEBUG_ERR(MC33816, ("MC33816 Bootstrap_check() failed\n"));
+    	return -1;
+    };
 
     // Add code to enable interrupts
 
