@@ -80,8 +80,7 @@ extern void set_drven_pin(int state);
 #define Flag1  0x100
 
 void init_ADC(void);
-unsigned short read_ADC(unsigned char channel);
-unsigned short read_ADC1(unsigned char channel);
+float read_ADC(unsigned char channel);
 
 void init_CLOCK(void);
 

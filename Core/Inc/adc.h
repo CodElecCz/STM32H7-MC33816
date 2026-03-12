@@ -3,7 +3,7 @@
   ******************************************************************************
   * @file           : adc.h
   * @brief          : Header for adc.c file.
-  *                   This file contains the ADC management for MC33816 analog outputs
+  *                   This file contains the ADC management for analog outputs
   ******************************************************************************
   * @attention
   *
@@ -31,11 +31,11 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
-    uint16_t oa1_raw;      // Raw ADC value for OA_OUT1 (PA0/ADC1_INP16)
-    uint16_t oa2_raw;      // Raw ADC value for OA_OUT2 (PA1/ADC1_INP17)
-    float oa1_voltage;     // Converted voltage for OA_OUT1 (V)
-    float oa2_voltage;     // Converted voltage for OA_OUT2 (V)
-} ADC_MC33816_Data_t;
+    uint16_t a1_raw;       // Raw ADC value for A1 (PA0/ADC1_INP16)
+    uint16_t a2_raw;       // Raw ADC value for A2 (PA1/ADC1_INP17)
+    float a1_voltage;      // Converted voltage for A1 (V)
+    float a2_voltage;      // Converted voltage for A2 (V)
+} ADC_Data_t;
 
 /* Exported constants --------------------------------------------------------*/
 #define ADC_BUFFER_SIZE         2           // Number of ADC channels
@@ -46,14 +46,14 @@ typedef struct {
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions prototypes ---------------------------------------------*/
-void ADC_MC33816_Init(ADC_HandleTypeDef *hadc);
-void ADC_MC33816_Start(void);
-void ADC_MC33816_Stop(void);
-void ADC_MC33816_GetData(ADC_MC33816_Data_t *data);
-uint16_t ADC_MC33816_GetOA1_Raw(void);
-uint16_t ADC_MC33816_GetOA2_Raw(void);
-float ADC_MC33816_GetOA1_Voltage(void);
-float ADC_MC33816_GetOA2_Voltage(void);
+void ADC_Init(void);
+void ADC_Start(void);
+void ADC_Stop(void);
+void ADC_GetData(ADC_Data_t *data);
+uint16_t ADC_GetA1_Raw(void);
+uint16_t ADC_GetA2_Raw(void);
+float ADC_GetA1_Voltage(void);
+float ADC_GetA2_Voltage(void);
 
 #ifdef __cplusplus
 }

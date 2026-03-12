@@ -38,6 +38,7 @@
 *******************************************************************************/
 
 #include "mc33816_system.h"
+#include "main.h"
 
 const unsigned long  DELAY_FACTOR = 1599;   // This needs to be set for the specific MCU being used
 const unsigned long  DELAY_FACTOR2 = 159;
@@ -57,31 +58,20 @@ void init_ADC(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function name   : read_ADC
 // Description     : Read from ADC module 0
-// Return type     : uint16_t
+// Return type     : float
 // Argument        : unsigned char channel
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-unsigned short read_ADC(unsigned char channel)
+float read_ADC(unsigned char channel)
 {
-    unsigned short result = 0;
-
-    // Add MCU specific ADC read code here
-
-    return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Function name   : read_ADC1
-// Description     : Read from ADC module 1
-// Return type     : uint16_t
-// Argument        : unsigned char channel
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-unsigned short read_ADC1(unsigned char channel)
-{
-    unsigned short result = 0;
-
-    // Add MCU specific ADC read code here
-
-    return result;
+	switch(channel)
+	{
+	case 1:
+		return ADC_GetA1_Voltage();
+	case 2:
+		return ADC_GetA2_Voltage();
+	default:
+		return 0.0f; // Invalid channel, return 0 or handle as needed
+	}
 }
 
 

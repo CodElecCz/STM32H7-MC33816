@@ -172,6 +172,8 @@ int main(void)
   MX_MBEDTLS_Init();
   /* USER CODE BEGIN 2 */
   DWT_Init();
+  ADC_Init();
+  ADC_Start();
   /* USER CODE END 2 */
 
   /* Init scheduler */
