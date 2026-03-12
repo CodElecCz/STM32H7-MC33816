@@ -341,7 +341,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T2_TRGO;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
+  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc1.Init.OversamplingMode = DISABLE;
@@ -363,7 +363,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_8CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_64CYCLES_5; //ADC_SAMPLETIME_8CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -676,7 +676,7 @@ static void MX_TIM2_Init(void)
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 2399; //100kHz sampling
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
@@ -693,7 +693,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-
+  // TIM2 will be started after ADC initialization in main()
   /* USER CODE END TIM2_Init 2 */
 
 }
@@ -973,7 +973,16 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	MC33816_process();
+#if 0
+	float a1 = ADC_GetA1_Voltage();
+	MAIN_DEBUG_ERR(MC33816, ("ADC A1(%d.%03dV)\n", (int)a1, (int)((a1 - (int)a1)*1000)));
 
+	float a2 = ADC_GetA2_Voltage();
+	MAIN_DEBUG_ERR(MC33816, ("ADC A2(%d.%03dV)\n", (int)a2, (int)((a2 - (int)a2)*1000)));
+
+	//ADC_Stop();
+	//ADC_Start();
+#endif
 	osDelay(1);
   }
   /* USER CODE END 5 */

@@ -509,10 +509,13 @@ bool BIST_check(_Bool BIST_run)
 bool OA_path_check(_Bool OA1_check, _Bool OA2_check)
 {
 	uint16_t rxData = 0;
-    bool OA_results=0;
-    float OA_value=0;
-    bool OA1_test=1;
-    bool OA2_test=1;
+    bool OA_results = 0;
+    float OA_value1 = 0.0;
+    float OA_value2 = 0.0;
+    bool OA1_test = 1;
+    bool OA2_test = 1;
+    uint32_t timeout_start = 0;
+    uint32_t timeout_ms = 200;  // 100ms timeout
 
     rxData = send_single_SPI_Cmd(WRITE, selection_register, COMMON_PAGE); // Select common page
     
@@ -521,19 +524,52 @@ bool OA_path_check(_Bool OA1_check, _Bool OA2_check)
     if(OA1_check == 1)  // OA1
     {
     	rxData = send_single_SPI_Cmd(WRITE, io_oa_out1_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
-        OA_value = read_ADC(1);
-        if ( OA_value > 4.8) OA1_test = 1;        // No fault F5x19.6mV = 4.8V on OA meaning VCC2P5 > 2.4V (gain of 2)
-        else OA1_test =0;
+    	
+    	// Read ADC in loop with timeout until value > 4.8V or timeout
+    	timeout_start = HAL_GetTick();
+    	OA1_test = 0;  // Start with failed state
+    	while ((HAL_GetTick() - timeout_start) < timeout_ms)
+    	{
+    		OA_value1 = read_ADC(1);
+    		if (OA_value1 > 4.8)
+    		{
+    			OA1_test = 1;  // No fault F5x19.6mV = 4.8V on OA meaning VCC2P5 > 2.4V (gain of 2)
+    			break;
+    		}
+    		delay(1);  // Small delay between readings
+    	}
+    	if(OA1_test == 0)
+		{
+			MAIN_DEBUG_ERR(MC33816, ("MC33816 OA1_path_check(%d.%02dV) failed\n", (int)OA_value1, (int)((OA_value1 - (int)OA_value1)*100)));
+			//while(1);
+		}
     }
+    
     if(OA2_check == 1)  // OA2
     {
     	rxData = send_single_SPI_Cmd(WRITE, io_oa_out2_config, 0x2B);  // This will set the OA gain to 2.0, voltage on OA will be 5V
-        OA_value = read_ADC(2);
-        if ( OA_value > 4.8) OA2_test = 1;
-        else OA2_test =0;
+    	
+    	// Read ADC in loop with timeout until value > 4.8V or timeout
+    	timeout_start = HAL_GetTick();
+    	OA2_test = 0;  // Start with failed state
+    	while ((HAL_GetTick() - timeout_start) < timeout_ms)
+    	{
+    		OA_value2 = read_ADC(2);
+    		if (OA_value2 > 4.8)
+    		{
+    			OA2_test = 1;
+    			break;
+    		}
+    		delay(1);  // Small delay between readings
+    	}
+    	if(OA2_test == 0)
+		{
+			MAIN_DEBUG_ERR(MC33816, ("MC33816 OA2_path_check(%d.%02dV) failed\n", (int)OA_value2, (int)((OA_value2 - (int)OA_value2)*100)));
+			//while(1);
+		}
     }
 
-    OA_results = OA1_test  & OA2_test ;
+    OA_results = OA1_test & OA2_test;
     return OA_results;
 }
 

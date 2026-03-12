@@ -29,13 +29,75 @@
 
 /* Private variables ---------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
-static uint16_t adc_buffer[ADC_BUFFER_SIZE] = {0};
+extern TIM_HandleTypeDef htim2;  // Timer for ADC sampling
+
+// Place ADC buffer in D3 SRAM (0x38000000) for DMA access - uses entire 64K RAM_D3
+// STM32H7 DMA cannot access DTCM RAM directly
+// Buffer holds 32768 uint16_t values = 16384 dual-channel samples (A2, A1, A2, A1...)
+#if defined ( __ICCARM__ )
+#pragma location = 0x38000000
+static uint16_t adc_buffer[ADC_BUFFER_SIZE];
+#elif defined ( __CC_ARM )
+static uint16_t adc_buffer[ADC_BUFFER_SIZE] __attribute__((at(0x38000000)));
+#elif defined ( __GNUC__ )
+static uint16_t adc_buffer[ADC_BUFFER_SIZE] __attribute__((section(".dma_buffer")));
+#else
+static uint16_t adc_buffer[ADC_BUFFER_SIZE];
+#warning "ADC buffer location not explicitly set - DMA may not work"
+#endif
+
 static ADC_Data_t adc_data = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 static void ADC_ConvertRawToVoltage(void);
+static uint32_t ADC_GetLastSampleIndex(uint8_t channel);
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Get the index of the last complete sample in the circular buffer
+  * @param  channel: 1 for A1 (odd index), 2 for A2 (even index)
+  * @retval Buffer index of the last complete sample
+  */
+static uint32_t ADC_GetLastSampleIndex(uint8_t channel)
+{
+    uint32_t dma_index;
+    
+    // Get current DMA write position (remaining items to transfer)
+    uint32_t dma_remaining = __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    
+    // Calculate the last completed write position
+    // DMA counter counts down, so actual index is (BUFFER_SIZE - remaining)
+    dma_index = ADC_BUFFER_SIZE - dma_remaining;
+    
+    if (channel == 1)
+    {
+        // A1 is at odd index - move back 1 position to get last complete A1 sample
+        if (dma_index >= 1)
+        {
+            dma_index -= 1;
+        }
+        else
+        {
+            dma_index = ADC_BUFFER_SIZE - 1;
+        }
+    }
+    else
+    {
+        // A2 is at even index - move back 2 positions to get last complete A2 sample
+        if (dma_index >= 2)
+        {
+            dma_index -= 2;
+        }
+        else
+        {
+            // Wrap around to end of circular buffer
+            dma_index = ADC_BUFFER_SIZE - (2 - dma_index);
+        }
+    }
+    
+    return dma_index;
+}
 
 /**
   * @brief  Convert raw ADC values to voltages
@@ -77,6 +139,8 @@ void ADC_Start(void)
     {
         Error_Handler();
     }
+
+    HAL_TIM_Base_Start(&htim2);  // Start TIM2 after ADC is ready
 }
 
 /**
@@ -85,6 +149,7 @@ void ADC_Start(void)
   */
 void ADC_Stop(void)
 {
+	HAL_TIM_Base_Stop(&htim2);  // Start TIM2 after ADC is ready
     HAL_ADC_Stop_DMA(&hadc1);
 }
 
@@ -95,14 +160,22 @@ void ADC_Stop(void)
   */
 void ADC_GetData(ADC_Data_t *data)
 {
+    uint32_t dma_index;
+    
     if (data == NULL)
     {
         return;
     }
     
-    // Update raw values from buffer
-    adc_data.a1_raw = adc_buffer[0];  // ADC_CHANNEL_10 (PA0/ADC1_INP16) - A1
-    adc_data.a2_raw = adc_buffer[1];  // ADC_CHANNEL_15 (PA1/ADC1_INP17) - A2
+    // Get index of last complete A2 sample (even index)
+    dma_index = ADC_GetLastSampleIndex(2);
+    
+    // Invalidate D-Cache to ensure fresh data from DMA
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 64);
+    
+    // Read last complete sample from buffer
+    adc_data.a2_raw = adc_buffer[dma_index];      // ADC_CHANNEL_10 (PC0/ADC1_INP10) - A2
+    adc_data.a1_raw = adc_buffer[dma_index + 1];  // ADC_CHANNEL_15 (PA3/ADC1_INP15) - A1
     
     // Convert to voltage
     ADC_ConvertRawToVoltage();
@@ -117,7 +190,11 @@ void ADC_GetData(ADC_Data_t *data)
   */
 uint16_t ADC_GetA1_Raw(void)
 {
-    return adc_buffer[0];
+    uint32_t dma_index = ADC_GetLastSampleIndex(1);
+    
+    // Invalidate D-Cache to get fresh data
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
+    return adc_buffer[dma_index];  // ADC_CHANNEL_15 (PA3/ADC1_INP15)
 }
 
 /**
@@ -126,7 +203,11 @@ uint16_t ADC_GetA1_Raw(void)
   */
 uint16_t ADC_GetA2_Raw(void)
 {
-    return adc_buffer[1];
+    uint32_t dma_index = ADC_GetLastSampleIndex(2);
+    
+    // Invalidate D-Cache to get fresh data
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
+    return adc_buffer[dma_index];  // ADC_CHANNEL_10 (PC0/ADC1_INP10)
 }
 
 /**
@@ -135,7 +216,11 @@ uint16_t ADC_GetA2_Raw(void)
   */
 float ADC_GetA1_Voltage(void)
 {
-    adc_data.a1_raw = adc_buffer[0];
+    uint32_t dma_index = ADC_GetLastSampleIndex(1);
+    
+    // Invalidate D-Cache to get fresh data
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
+    adc_data.a1_raw = adc_buffer[dma_index];  // ADC_CHANNEL_15 (PA3/ADC1_INP15)
     adc_data.a1_voltage = ((float)adc_data.a1_raw / ADC_RESOLUTION) * ADC_VREF * ADC_VOLTAGE_DIVIDER;
     return adc_data.a1_voltage;
 }
@@ -146,7 +231,11 @@ float ADC_GetA1_Voltage(void)
   */
 float ADC_GetA2_Voltage(void)
 {
-    adc_data.a2_raw = adc_buffer[1];
+    uint32_t dma_index = ADC_GetLastSampleIndex(2);
+    
+    // Invalidate D-Cache to get fresh data
+    SCB_InvalidateDCache_by_Addr((uint32_t*)&adc_buffer[dma_index], 32);
+    adc_data.a2_raw = adc_buffer[dma_index];  // ADC_CHANNEL_10 (PC0/ADC1_INP10)
     adc_data.a2_voltage = ((float)adc_data.a2_raw / ADC_RESOLUTION) * ADC_VREF * ADC_VOLTAGE_DIVIDER;
     return adc_data.a2_voltage;
 }
@@ -163,4 +252,251 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
         // ADC conversion complete - data is now in adc_buffer via DMA
         // No action needed here as data is automatically updated in buffer
     }
+}
+
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+    uint32_t error_code = HAL_ADC_GetError(hadc);
+
+    if (error_code & HAL_ADC_ERROR_OVR)
+    {
+        // Handle Overrun: Clear flag and restart
+        __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_OVR);
+    }
+}
+
+/* Called if the DMA fails to move data to RAM */
+void HAL_ADC_DMAErrorCallback(ADC_HandleTypeDef *hadc)
+{
+    // This usually means your buffer is in the wrong RAM (DTCM)
+    Error_Handler();
+}
+
+/* Trigger capture functions -------------------------------------------------*/
+
+/**
+  * @brief  Initialize trigger capture configuration
+  * @param  capture: pointer to ADC_TriggerCapture_t structure
+  * @param  channel: channel to monitor (1=A1, 2=A2)
+  * @param  threshold: trigger threshold voltage
+  * @param  rising_edge: 1=rising edge trigger, 0=falling edge trigger
+  * @param  presample_count: number of samples to capture before trigger
+  * @param  total_samples: total number of samples to capture
+  * @param  buffer: pointer to user-provided buffer for capture
+  * @param  buffer_size: size of the capture buffer
+  * @retval None
+  */
+void ADC_TriggerCapture_Init(ADC_TriggerCapture_t *capture, uint8_t channel, 
+                              float threshold, uint8_t rising_edge,
+                              uint32_t presample_count, uint32_t total_samples,
+                              uint16_t* buffer, uint32_t buffer_size)
+{
+    if (capture == NULL || buffer == NULL)
+    {
+        return;
+    }
+    
+    capture->channel = channel;
+    capture->threshold_voltage = threshold;
+    capture->rising_edge = rising_edge;
+    capture->presample_count = presample_count;
+    capture->total_samples = total_samples;
+    capture->buffer = buffer;
+    capture->buffer_size = buffer_size;
+    capture->state = ADC_TRIGGER_IDLE;
+    capture->trigger_index = 0;
+    capture->samples_captured = 0;
+    
+    // Validate parameters
+    if (total_samples > buffer_size)
+    {
+        capture->total_samples = buffer_size;
+    }
+    if (presample_count >= total_samples)
+    {
+        capture->presample_count = total_samples / 2;
+    }
+}
+
+/**
+  * @brief  Arm the trigger capture
+  * @param  capture: pointer to ADC_TriggerCapture_t structure
+  * @retval None
+  */
+void ADC_TriggerCapture_Arm(ADC_TriggerCapture_t *capture)
+{
+    if (capture == NULL)
+    {
+        return;
+    }
+    
+    capture->state = ADC_TRIGGER_ARMED;
+    capture->samples_captured = 0;
+    capture->trigger_index = 0;
+}
+
+/**
+  * @brief  Process ADC trigger capture by searching through DMA buffer
+  * @param  capture: pointer to ADC_TriggerCapture_t structure
+  * @retval None
+  * @note   This function searches the entire 32KB DMA circular buffer for trigger events.
+  *         No need to call frequently - call once when you want to capture.
+  *         The function will find the trigger event in the historical data.
+  */
+void ADC_TriggerCapture_Process(ADC_TriggerCapture_t *capture)
+{
+    uint32_t dma_current_index;
+    uint32_t search_start_index;
+    uint32_t samples_to_search;
+    uint32_t i;
+    uint16_t threshold_raw;
+    uint16_t current_value, previous_value;
+    uint32_t trigger_found_index = 0;
+    uint8_t trigger_found = 0;
+    uint32_t channel_offset;
+    uint32_t step;
+    
+    if (capture == NULL || capture->state != ADC_TRIGGER_ARMED)
+    {
+        return;
+    }
+    
+    // Invalidate entire DMA buffer cache to ensure fresh data
+    SCB_InvalidateDCache_by_Addr((uint32_t*)adc_buffer, ADC_BUFFER_SIZE * sizeof(uint16_t));
+    
+    // Get current DMA write position
+    dma_current_index = ADC_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
+    
+    // Convert threshold voltage to raw ADC value
+    threshold_raw = (uint16_t)((capture->threshold_voltage / (ADC_VREF * ADC_VOLTAGE_DIVIDER)) * ADC_RESOLUTION);
+    
+    // Determine channel offset and step for interleaved dual-channel buffer
+    // Buffer format: [A2, A1, A2, A1, A2, A1, ...]
+    // A2 (channel 2) is at even indices: 0, 2, 4, 6...
+    // A1 (channel 1) is at odd indices: 1, 3, 5, 7...
+    if (capture->channel == 1)
+    {
+        channel_offset = 1;  // A1 at odd indices
+    }
+    else
+    {
+        channel_offset = 0;  // A2 at even indices
+    }
+    step = 2;  // Step by 2 to get only the selected channel
+    
+    // Calculate how many samples of this channel are available in buffer
+    // Buffer has 32768 total samples = 16384 per channel
+    samples_to_search = ADC_BUFFER_SIZE / 2;  // 16384 samples per channel
+    
+    // Make sure we don't search more samples than we need
+    if (samples_to_search > capture->total_samples + 1000)
+    {
+        samples_to_search = capture->total_samples + 1000;  // Search a bit more than needed
+    }
+    
+    // Start searching backwards from current DMA position
+    // We want to find the most recent trigger event
+    search_start_index = dma_current_index;
+    if (search_start_index % 2 != channel_offset)
+    {
+        // Align to correct channel
+        search_start_index = (search_start_index + 1) % ADC_BUFFER_SIZE;
+    }
+    
+    // Search backwards through the buffer for trigger condition
+    for (i = 0; i < samples_to_search - 1; i++)
+    {
+        uint32_t current_idx = (search_start_index - (i * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
+        uint32_t previous_idx = (current_idx - step + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
+        
+        current_value = adc_buffer[current_idx];
+        previous_value = adc_buffer[previous_idx];
+        
+        // Check for trigger condition
+        if (capture->rising_edge)
+        {
+            // Rising edge: previous < threshold AND current >= threshold
+            if (previous_value < threshold_raw && current_value >= threshold_raw)
+            {
+                trigger_found = 1;
+                trigger_found_index = current_idx;
+                break;
+            }
+        }
+        else
+        {
+            // Falling edge: previous >= threshold AND current < threshold
+            if (previous_value >= threshold_raw && current_value < threshold_raw)
+            {
+                trigger_found = 1;
+                trigger_found_index = current_idx;
+                break;
+            }
+        }
+    }
+    
+    if (!trigger_found)
+    {
+        // No trigger found in buffer
+        return;
+    }
+    
+    // Trigger found! Now extract the samples around the trigger point
+    // Calculate how many pre-samples we can actually get
+    uint32_t actual_presamples = capture->presample_count;
+    uint32_t actual_postsamples = capture->total_samples - actual_presamples;
+    
+    // Copy samples to user buffer in chronological order
+    for (i = 0; i < capture->total_samples; i++)
+    {
+        // Calculate position relative to trigger
+        int32_t offset_from_trigger = (int32_t)i - (int32_t)actual_presamples;
+        
+        // Calculate absolute buffer index
+        uint32_t src_idx = (trigger_found_index + (offset_from_trigger * step) + ADC_BUFFER_SIZE) % ADC_BUFFER_SIZE;
+        
+        // Bounds check
+        if (i < capture->buffer_size)
+        {
+            capture->buffer[i] = adc_buffer[src_idx];
+        }
+    }
+    
+    capture->samples_captured = capture->total_samples;
+    capture->trigger_index = actual_presamples;  // Trigger point in output buffer
+    capture->state = ADC_TRIGGER_COMPLETE;
+}
+
+/**
+  * @brief  Get trigger capture state
+  * @param  capture: pointer to ADC_TriggerCapture_t structure
+  * @retval Current state
+  */
+ADC_TriggerState_t ADC_TriggerCapture_GetState(ADC_TriggerCapture_t *capture)
+{
+    if (capture == NULL)
+    {
+        return ADC_TRIGGER_IDLE;
+    }
+    return capture->state;
+}
+
+/**
+  * @brief  Get captured data after trigger is complete
+  * @param  capture: pointer to ADC_TriggerCapture_t structure
+  * @retval Number of samples captured
+  * @note   Data is already in chronological order in the buffer:
+  *         [pre-samples...][trigger point][post-samples...]
+  *         Trigger point is at index capture->trigger_index
+  */
+uint32_t ADC_TriggerCapture_GetData(ADC_TriggerCapture_t *capture)
+{
+    if (capture == NULL || capture->state != ADC_TRIGGER_COMPLETE)
+    {
+        return 0;
+    }
+    
+    // Data is already in correct chronological order
+    // No reorganization needed
+    return capture->samples_captured;
 }

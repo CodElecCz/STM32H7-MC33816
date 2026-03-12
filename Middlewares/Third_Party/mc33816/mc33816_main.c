@@ -122,7 +122,7 @@ int MC33816_init(void)
     if (OA_path_check(1,1) == 0) 	// Check OA pin connections to MCU ADC
     {
     	MAIN_DEBUG_ERR(MC33816, ("MC33816 OA_path_check() failed\n"));
-    	//return -1;
+    	return -1;
     };
 
     // Program the device
