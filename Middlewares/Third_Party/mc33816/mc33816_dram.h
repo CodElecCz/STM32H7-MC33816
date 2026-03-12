@@ -68,4 +68,7 @@
 #define MC33816_D2_Thold_off  0x47
 #define MC33816_D2_Thold_tot  0x48
 
+void DRAM_Parameter_Read(uint8_t param_addr, uint16_t* value);
+void DRAM_Parameter_Write(uint8_t param_addr, uint16_t value);
+
 #endif /* MC33816_DRAM_H_ */
