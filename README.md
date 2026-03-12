@@ -21,6 +21,8 @@ The development kit combines the **NUCLEO-H753ZI** board (STM32H753ZI microcontr
 
 The following table shows the pin connections between the NUCLEO-H753ZI board and the MC33816 evaluation kit (KIT33816FRDMUG):
 
+![MC33816 Connection Schematic](Documents/mc33816%20schematic.png)
+
 #### SPI Communication Interface
 
 | Signal      | NUCLEO-H753ZI Pin | MC33816 Kit Pin | Description                          |
