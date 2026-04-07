@@ -186,8 +186,7 @@ int main(void)
   ADC_Init();
   ADC_Start();
   /* USER CODE END 2 */
-extern volatile UBaseType_t uxTopUsedPriority;
-  uxTopUsedPriority = configMAX_PRIORITIES - 1U;
+
   /* Init scheduler */
   osKernelInitialize();
 
@@ -209,7 +208,6 @@ extern volatile UBaseType_t uxTopUsedPriority;
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  HAL_Delay(5000);
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
