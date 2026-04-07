@@ -1271,7 +1271,7 @@ shell_thread(void *arg)
 void
 shell_init(void)
 {
-  sys_thread_new("shell_thread", shell_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
+  sys_thread_new("shellTask", shell_thread, NULL, DEFAULT_THREAD_STACKSIZE*4, DEFAULT_THREAD_PRIO);
 }
 
 #endif /* LWIP_NETCONN && LWIP_TCP */

@@ -82,14 +82,10 @@ TIM_HandleTypeDef htim16;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-static StaticTask_t Default_TCB __attribute__((aligned(8)));
-static StackType_t Default_Stack[ 1024 ] __attribute__((aligned(8)));
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "Default",
-  .cb_mem = &Default_TCB,
-  .cb_size = sizeof(Default_TCB),
-  .stack_mem = &Default_Stack[0],
-  .stack_size = sizeof(Default_Stack),
+  .name = "defaultTask",
+  .stack_size = 1024 * 4,   /* 4096 B — enlarged for USB+LwIP+shell+MC33816 init;
+                               tune down once uxTaskGetStackHighWaterMark() is read */
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -1041,7 +1037,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
   equals to 1 and is required for static memory allocation support.
 */
-__WEAK void vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
+void vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
   /* Idle task control block and stack */
   static StaticTask_t Idle_TCB __attribute__((aligned(8)));
   static StackType_t  Idle_Stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(8)));
@@ -1055,7 +1051,7 @@ __WEAK void vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer, 
   vApplicationGetTimerTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
   equals to 1 and is required for static memory allocation support.
 */
-__WEAK void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
+void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
   /* Timer task control block and stack */
   static StaticTask_t Timer_TCB __attribute__((aligned(8)));
   static StackType_t  Timer_Stack[configTIMER_TASK_STACK_DEPTH] __attribute__((aligned(8)));
@@ -1082,13 +1078,13 @@ uint16_t buffer[BUFFER_SIZE];
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
-  //MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-  //MX_LWIP_Init();
+  MX_LWIP_Init();
 
 #if MAIN_DEBUG
-  //shell_init();
+  shell_init();
 #endif
 
 #if LWIP_PERF
