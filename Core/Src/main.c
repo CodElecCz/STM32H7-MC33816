@@ -88,7 +88,9 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-
+__attribute__((section(".rtos_heap")))
+__attribute__((aligned(32)))
+uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -184,7 +186,8 @@ int main(void)
   ADC_Init();
   ADC_Start();
   /* USER CODE END 2 */
-
+extern volatile UBaseType_t uxTopUsedPriority;
+  uxTopUsedPriority = configMAX_PRIORITIES - 1U;
   /* Init scheduler */
   osKernelInitialize();
 
@@ -206,6 +209,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
+  HAL_Delay(5000);
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
