@@ -82,14 +82,14 @@ TIM_HandleTypeDef htim16;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-static uint32_t defaultTaskBuffer[ 512 ] __attribute__((aligned(8)));
-static StaticTask_t defaultTaskControlBlock __attribute__((aligned(8)));
+static StaticTask_t Default_TCB __attribute__((aligned(8)));
+static StackType_t Default_Stack[ 1024 ] __attribute__((aligned(8)));
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .cb_mem = &defaultTaskControlBlock,
-  .cb_size = sizeof(defaultTaskControlBlock),
-  .stack_mem = &defaultTaskBuffer[0],
-  .stack_size = sizeof(defaultTaskBuffer),
+  .name = "Default",
+  .cb_mem = &Default_TCB,
+  .cb_size = sizeof(Default_TCB),
+  .stack_mem = &Default_Stack[0],
+  .stack_size = sizeof(Default_Stack),
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -1036,6 +1036,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+/*
+  vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
+  equals to 1 and is required for static memory allocation support.
+*/
+__WEAK void vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
+  /* Idle task control block and stack */
+  static StaticTask_t Idle_TCB __attribute__((aligned(8)));
+  static StackType_t  Idle_Stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(8)));
+
+  *ppxIdleTaskTCBBuffer   = &Idle_TCB;
+  *ppxIdleTaskStackBuffer = &Idle_Stack[0];
+  *pulIdleTaskStackSize   = (uint32_t)configMINIMAL_STACK_SIZE;
+}
+
+/*
+  vApplicationGetTimerTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
+  equals to 1 and is required for static memory allocation support.
+*/
+__WEAK void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
+  /* Timer task control block and stack */
+  static StaticTask_t Timer_TCB __attribute__((aligned(8)));
+  static StackType_t  Timer_Stack[configTIMER_TASK_STACK_DEPTH] __attribute__((aligned(8)));
+
+  *ppxTimerTaskTCBBuffer   = &Timer_TCB;
+  *ppxTimerTaskStackBuffer = &Timer_Stack[0];
+  *pulTimerTaskStackSize   = (uint32_t)configTIMER_TASK_STACK_DEPTH;
+}
+#endif
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */

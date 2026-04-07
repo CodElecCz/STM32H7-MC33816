@@ -73,9 +73,14 @@ __weak unsigned long getRunTimeCounterValue(void)
 /* USER CODE BEGIN 4 */
 void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName)
 {
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
+  /* Run time stack overflow checking is performed if
+   * configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
+   * function is called if a stack overflow is detected.
+   * Trap here so the debugger can identify the offending task name. */
+  (void)xTask;
+  (void)pcTaskName;
+  __disable_irq();
+  for (;;) {}
 }
 /* USER CODE END 4 */
 
