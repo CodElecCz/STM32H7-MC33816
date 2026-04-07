@@ -82,11 +82,17 @@ TIM_HandleTypeDef htim16;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
+static uint32_t defaultTaskBuffer[ 512 ] __attribute__((aligned(8)));
+static StaticTask_t defaultTaskControlBlock __attribute__((aligned(8)));
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 512 * 4,
+  .cb_mem = &defaultTaskControlBlock,
+  .cb_size = sizeof(defaultTaskControlBlock),
+  .stack_mem = &defaultTaskBuffer[0],
+  .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
+
 /* USER CODE BEGIN PV */
 __attribute__((section(".rtos_heap")))
 __attribute__((aligned(32)))
@@ -1029,6 +1035,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		break;
 	}
 }
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1049,15 +1056,15 @@ void StartDefaultTask(void *argument)
   //MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-  MX_LWIP_Init();
+  //MX_LWIP_Init();
 
 #if MAIN_DEBUG
-  shell_init();
+  //shell_init();
 #endif
 
 #if LWIP_PERF
   //perf
-  lwiperf_init();
+  //lwiperf_init();
 #endif
 
   osDelay(10);

@@ -129,17 +129,17 @@ SECTIONS
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
-    . = ALIGN(4);
+    . = ALIGN(8);
     _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
-    . = ALIGN(4);
+    . = ALIGN(8);
     _edata = .;        /* define a global symbol at data end */
   } >DTCMRAM AT> RAM_EXEC
 
   /* Uninitialized data section */
-  . = ALIGN(4);
+  . = ALIGN(8);
   .bss :
   {
     /* This is used by the startup in order to initialize the .bss section */
@@ -149,7 +149,7 @@ SECTIONS
     *(.bss*)
     *(COMMON)
 
-    . = ALIGN(4);
+    . = ALIGN(8);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >DTCMRAM
